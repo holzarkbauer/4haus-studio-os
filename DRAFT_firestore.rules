@@ -1,0 +1,223 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Blueprint Validation Helpers (Synced with firebase-blueprint.json)
+    function isValidUserWorkspaceMeta(data) {
+      return data.keys().hasAll(['ownerId', 'businessName', 'industry', 'targetLocation', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'businessName', 'industry', 'targetLocation', 'updatedAt'])
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 160
+        && data.industry is string && data.industry.size() >= 1 && data.industry.size() <= 160
+        && data.targetLocation is string && data.targetLocation.size() >= 1 && data.targetLocation.size() <= 160
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserProject(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'industry', 'targetLocation', 'objective', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'name', 'industry', 'targetLocation', 'objective', 'status', 'createdAt', 'updatedAt'])
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 160
+        && data.industry is string && data.industry.size() >= 1 && data.industry.size() <= 160
+        && data.targetLocation is string && data.targetLocation.size() >= 1 && data.targetLocation.size() <= 160
+        && data.objective is string && data.objective.size() >= 1 && data.objective.size() <= 400
+        && data.status is string && data.status.size() <= 40 && data.status in ['Activo', 'En Configuración', 'En Campaña', 'Pausado', 'Completado']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserProspect(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'company', 'role', 'email', 'socialHandle',
+          'channel', 'location', 'niche', 'status', 'temperature',
+          'source', 'sourceUrl', 'recommendedAction', 'schemaVersion',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'company', 'role', 'email', 'socialHandle',
+          'channel', 'location', 'niche', 'status', 'temperature',
+          'source', 'sourceUrl', 'recommendedAction', 'schemaVersion',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 160
+        && data.role is string && data.role.size() >= 1 && data.role.size() <= 140
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.socialHandle is string && data.socialHandle.size() >= 1 && data.socialHandle.size() <= 160
+        && data.channel is string && data.channel.size() <= 40 && data.channel in ['Email', 'Instagram', 'LinkedIn', 'WhatsApp', 'Web Form']
+        && data.location is string && data.location.size() >= 1 && data.location.size() <= 160
+        && data.niche is string && data.niche.size() >= 1 && data.niche.size() <= 160
+        && data.status is string && data.status.size() <= 40 && data.status in ['Nuevo', 'Contactado', 'Respondió', 'Cualificado', 'Reunión Agendada', 'Descartado']
+        && data.temperature is string && data.temperature.size() <= 40 && data.temperature in ['Caliente', 'Templado', 'Frío']
+        && data.source is string && data.source.size() >= 1 && data.source.size() <= 200
+        && data.sourceUrl is string && data.sourceUrl.size() >= 0 && data.sourceUrl.size() <= 300
+        && data.recommendedAction is string && data.recommendedAction.size() >= 1 && data.recommendedAction.size() <= 300
+        && data.schemaVersion is int && data.schemaVersion == 2
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Collection 1: /workspaces/{userId}
+    match /workspaces/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId) && existing().ownerId == request.auth.uid;
+      allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+
+      allow create: if isVerifiedUser()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserWorkspaceMeta(incoming())
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserWorkspaceMeta(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['businessName', 'industry', 'targetLocation', 'updatedAt']);
+
+      allow delete: if false;
+
+      // Subcollection: /workspaces/{userId}/projects/{projectId}
+      match /projects/{projectId} {
+        allow get: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && existing().ownerId == request.auth.uid
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+
+        allow list: if isOwner(userId)
+          && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && isValidUserProject(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+
+        allow update: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && isValidUserProject(incoming())
+          && existing().status != 'Completado'
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid
+          && (
+            // Action 1: Status change
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) ||
+            // Action 2: Project details edit
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'industry', 'targetLocation', 'objective', 'status', 'updatedAt'])
+          );
+
+        allow delete: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && existing().ownerId == request.auth.uid
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+      }
+
+      // Subcollection: /workspaces/{userId}/prospects/{prospectId}
+      match /prospects/{prospectId} {
+        allow get: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(prospectId)
+          && existing().ownerId == request.auth.uid
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+
+        allow list: if isOwner(userId)
+          && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectIdOrProspect(prospectId))
+          && isValidUserProspect(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+
+        allow update: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectIdOrProspect(prospectId))
+          && isValidUserProspect(incoming())
+          && existing().status != 'Descartado'
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid
+          && (
+            // Action 1: Pipeline status or temperature update
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'temperature', 'updatedAt']) ||
+            // Action 2: Schema v1 -> v2 Migration or Full genuine prospect metadata sync
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'company', 'role', 'email', 'socialHandle', 'channel',
+              'location', 'niche', 'status', 'temperature', 'source',
+              'sourceUrl', 'recommendedAction', 'schemaVersion', 'updatedAt'
+            ])
+          );
+
+        allow delete: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectIdOrProspect(prospectId))
+          && existing().ownerId == request.auth.uid
+          && exists(/databases/$(database)/documents/workspaces/$(userId))
+          && get(/databases/$(database)/documents/workspaces/$(userId)).data.ownerId == request.auth.uid;
+      }
+    }
+
+    function projectIdOrProspect(id) {
+      return id;
+    }
+  }
+}

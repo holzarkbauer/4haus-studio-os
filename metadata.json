@@ -1,0 +1,6 @@
+{
+  "name": "4haus.us — Páginas Web, Agentes de IA y Sistemas",
+  "description": "Creamos páginas web de alto rendimiento, agentes de IA autónomos y sistemas operativos para empresas. Arquitectura digital moderna y automatización de procesos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

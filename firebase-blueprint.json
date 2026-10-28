@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "UserWorkspaceMeta": {
+      "title": "UserWorkspaceMeta",
+      "description": "Metadata and business profile summary for an authenticated 4haus Studio client",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the workspace owner",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Name of the client business or project",
+          "maxLength": 160
+        },
+        "industry": {
+          "type": "string",
+          "description": "Target industry or sector",
+          "maxLength": 160
+        },
+        "targetLocation": {
+          "type": "string",
+          "description": "Geographic target market",
+          "maxLength": 160
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the last update"
+        }
+      },
+      "required": ["ownerId", "businessName", "industry", "targetLocation", "updatedAt"]
+    },
+    "UserProject": {
+      "title": "UserProject",
+      "description": "An active business or growth project owned by an authenticated 4haus Studio user",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the project owner",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the project or business initiative",
+          "maxLength": 160
+        },
+        "industry": {
+          "type": "string",
+          "description": "Sector or industry of the project",
+          "maxLength": 160
+        },
+        "targetLocation": {
+          "type": "string",
+          "description": "Target location or market",
+          "maxLength": 160
+        },
+        "objective": {
+          "type": "string",
+          "description": "Primary 90-day goal or project summary",
+          "maxLength": 400
+        },
+        "status": {
+          "type": "string",
+          "description": "Current operational status of the project",
+          "enum": ["Activo", "En Configuración", "En Campaña", "Pausado", "Completado"],
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated"
+        }
+      },
+      "required": ["ownerId", "name", "industry", "targetLocation", "objective", "status", "createdAt", "updatedAt"]
+    },
+    "UserProspect": {
+      "title": "UserProspect",
+      "description": "Genuine CRM prospect belonging to a specific 4haus Studio user with verified source and tracking metadata",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the prospect owner",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the prospect or decision maker",
+          "maxLength": 140
+        },
+        "company": {
+          "type": "string",
+          "description": "Company or corporate asset name",
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "description": "Executive role or job title",
+          "maxLength": 140
+        },
+        "email": {
+          "type": "string",
+          "description": "Prospect corporate email address",
+          "maxLength": 200
+        },
+        "socialHandle": {
+          "type": "string",
+          "description": "Corporate domain or social identifier",
+          "maxLength": 160
+        },
+        "channel": {
+          "type": "string",
+          "description": "Acquisition or outreach channel",
+          "enum": ["Email", "Instagram", "LinkedIn", "WhatsApp", "Web Form"],
+          "maxLength": 40
+        },
+        "location": {
+          "type": "string",
+          "description": "Geographic city or region of the prospect",
+          "maxLength": 160
+        },
+        "niche": {
+          "type": "string",
+          "description": "Target business niche or vertical",
+          "maxLength": 160
+        },
+        "status": {
+          "type": "string",
+          "description": "Current pipeline status",
+          "enum": ["Nuevo", "Contactado", "Respondió", "Cualificado", "Reunión Agendada", "Descartado"],
+          "maxLength": 40
+        },
+        "temperature": {
+          "type": "string",
+          "description": "Lead temperature",
+          "enum": ["Caliente", "Templado", "Frío"],
+          "maxLength": 40
+        },
+        "source": {
+          "type": "string",
+          "description": "Verified origin or web source of the prospect",
+          "maxLength": 200
+        },
+        "sourceUrl": {
+          "type": "string",
+          "description": "Official website or public verification URL",
+          "maxLength": 300
+        },
+        "recommendedAction": {
+          "type": "string",
+          "description": "Next best commercial follow-up action",
+          "maxLength": 300
+        },
+        "schemaVersion": {
+          "type": "number",
+          "description": "Schema version (2 = genuine prospect tracking schema)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "company",
+        "role",
+        "email",
+        "socialHandle",
+        "channel",
+        "location",
+        "niche",
+        "status",
+        "temperature",
+        "source",
+        "sourceUrl",
+        "recommendedAction",
+        "schemaVersion",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/workspaces/{userId}": {
+      "schema": "UserWorkspaceMeta",
+      "description": "Stores each authenticated user's isolated workspace metadata."
+    },
+    "/workspaces/{userId}/projects/{projectId}": {
+      "schema": "UserProject",
+      "description": "Stores active projects isolated under the authenticated user's workspace."
+    },
+    "/workspaces/{userId}/prospects/{prospectId}": {
+      "schema": "UserProspect",
+      "description": "Stores genuine CRM prospects isolated under the authenticated user's workspace."
+    }
+  }
+}

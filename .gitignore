@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Archivos temporales de Google AI Studio
+.aistudio/
+
+# Datos de usuarios que guarda el servidor (nunca en Git)
+data/
