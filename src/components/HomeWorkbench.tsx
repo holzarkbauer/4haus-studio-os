@@ -290,78 +290,43 @@ export function HomeWorkbench({
           </div>
         )}
 
-        {/* VIEW 3: WEBSITES LIBRARY */}
+        {/* VIEW 3: PLANTILLAS (une la antigua Websites Library y la galería del Landing Builder) */}
         {activeSidebarItem === 'websites' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono uppercase text-indigo-600 font-semibold mb-1">
-                <Globe className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Production Deployments' : 'Despliegues en Producción'}</span>
+          <div className="space-y-8 animate-in fade-in duration-200 pt-4">
+            <div className="max-w-6xl mx-auto w-full flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                  {lang === 'en' ? 'Templates' : 'Plantillas'}
+                </h2>
+                <p className={`text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  {lang === 'en'
+                    ? 'Each template comes with its prompt. Pick one and adapt it to your client.'
+                    : 'Cada plantilla trae su prompt. Elige una y adáptala a tu cliente.'}
+                </p>
               </div>
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                {lang === 'en' ? 'Websites Library' : 'Librería de Websites'}
-              </h2>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {lang === 'en'
-                  ? 'Access live production landing pages, client clones, and conversion architectures.'
-                  : 'Accede a landing pages en vivo, clones de clientes y arquitecturas de conversión.'}
-              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setGrowthStep('paso5-landing');
+                  onSelectSidebarItem('growth-os');
+                }}
+                className={`self-start sm:self-auto px-4 py-2 rounded-full border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  isDark ? 'border-white/15 text-white hover:bg-white/5' : 'border-black/[0.1] text-zinc-900 bg-white hover:bg-black/[0.03]'
+                }`}
+              >
+                {lang === 'en' ? 'Open landing builder' : 'Abrir constructor de landings'}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { title: '4haus Enterprise OS', desc: 'Main conversion portal with video canvas and autonomous engine', url: 'https://4haus.studio' },
-                { title: 'Haustore Marketplace', desc: 'Pre-built production codebases ready for one-click deployment', url: 'https://4haus.studio/store' },
-                { title: 'Autonomous Swarm Hub', desc: 'Real-time multi-agent orchestrator with webhook telemetry', url: 'https://4haus.studio/agents' },
-                { title: 'Systems Knowledge Vault', desc: 'Curated technical library on scaling and operational mastery', url: 'https://4haus.studio/knowledge' },
-              ].map((site, idx) => (
-                <div
-                  key={idx}
-                  className={`p-5 rounded-2xl border transition-all flex flex-col justify-between group ${
-                    isDark ? 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300 hover:shadow-xs'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold transition-colors ${
-                        isDark ? 'text-white group-hover:text-indigo-400' : 'text-zinc-900 group-hover:text-indigo-600'
-                      }`}>
-                        {site.title}
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        LIVE
-                      </span>
-                    </div>
-                    <p className={`text-xs leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{site.desc}</p>
-                  </div>
-                  <div className="pt-4 flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[200px]">{site.url}</span>
-                    <button
-                      onClick={() => onOpenLivePreview(site.url, site.title)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                        isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'
-                      }`}
-                    >
-                      <span>Preview</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <LeadNichoEngine
+            <HomeTemplatesShowcase
               lang={lang}
               themeMode={themeMode}
-              initialStep="paso5-landing"
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              preloadData={preloadData}
-              onOpenDanielModal={onOpenDanielModal}
-              onOpenTutorialsModal={onOpenTutorials}
-              onOpenBooksModal={onOpenBooksModal}
-              onOpenLivePreview={onOpenLivePreview}
+              galleryOnly
+              onUseTemplatePrompt={(prompt) => {
+                setTemplatePrompt(prompt);
+                onSelectSidebarItem('inicio');
+              }}
             />
           </div>
         )}
@@ -461,37 +426,68 @@ export function HomeWorkbench({
           </div>
         )}
 
-        {/* VIEW 6: KNOWLEDGE LIBRARY */}
-        {activeSidebarItem === 'knowledge' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+        {/* VIEW 6: APRENDE (une Descubrimiento, Biblioteca de recursos y Knowledge Library) */}
+        {['aprende', 'descubrimiento', 'recursos', 'knowledge'].includes(activeSidebarItem) && (
+          <div className="space-y-6 animate-in fade-in duration-200 max-w-6xl mx-auto w-full pt-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono uppercase text-indigo-600 font-semibold mb-1">
-                <BookOpen className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Curated Architecture' : 'Arquitectura Curada'}</span>
-              </div>
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Knowledge Library</h2>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {lang === 'en' ? 'Essential reading for systems engineers and entrepreneurs.' : 'Lecturas fundamentales para ingenieros de sistemas y fundadores.'}
+              <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                {lang === 'en' ? 'Learn' : 'Aprende'}
+              </h2>
+              <p className={`text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                {lang === 'en'
+                  ? 'Tutorials, guides and books to create and sell digital products.'
+                  : 'Tutoriales, guías y libros para crear y vender productos digitales.'}
               </p>
             </div>
 
-            <div className={`p-8 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-6 ${
-              isDark 
-                ? 'bg-amber-950/20 border-amber-900/40 text-amber-200' 
-                : 'bg-amber-50 border-amber-200 text-amber-950'
-            }`}>
-              <div>
-                <h3 className="text-xl font-bold">Biblioteca de Libros Recomendados</h3>
-                <p className={`text-xs mt-1 max-w-md ${isDark ? 'text-amber-300/80' : 'text-amber-800'}`}>
-                  Obras de arquitectura de sistemas, filosofía de ingeniería, escala y alta eficiencia.
-                </p>
-              </div>
-              <button
-                onClick={onOpenBooksModal}
-                className="px-5 py-2.5 rounded-xl bg-amber-900 text-white font-bold text-xs hover:bg-amber-800 transition-colors cursor-pointer shrink-0"
-              >
-                {lang === 'en' ? 'Browse Books' : 'Ver Libros'}
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: Play,
+                  title: lang === 'en' ? 'Tutorials' : 'Tutoriales',
+                  desc: lang === 'en' ? 'Step-by-step videos to use 4haus Studio.' : 'Videos paso a paso para usar 4haus Studio.',
+                  action: onOpenTutorials,
+                },
+                {
+                  icon: FileText,
+                  title: lang === 'en' ? 'Sales guides and templates' : 'Guías y plantillas de venta',
+                  desc: lang === 'en'
+                    ? 'Playbooks and message templates to win clients.'
+                    : 'Playbooks y plantillas de mensajes para conseguir clientes.',
+                  action: () => {
+                    setGrowthStep('paso6-recursos');
+                    onSelectSidebarItem('growth-os');
+                  },
+                },
+                {
+                  icon: BookOpen,
+                  title: lang === 'en' ? 'Recommended books' : 'Libros recomendados',
+                  desc: lang === 'en'
+                    ? 'Readings on systems, business and digital products.'
+                    : 'Lecturas sobre sistemas, negocios y productos digitales.',
+                  action: onOpenBooksModal,
+                },
+              ].map((card) => {
+                const Icon = card.icon;
+                return (
+                  <button
+                    key={card.title}
+                    type="button"
+                    onClick={card.action}
+                    className={`text-left p-6 rounded-2xl border transition-all cursor-pointer min-h-[170px] flex flex-col gap-3 ${
+                      isDark ? 'bg-[#1D1D1F] border-white/10 hover:border-white/25' : 'bg-white border-black/[0.08] hover:shadow-md'
+                    }`}
+                  >
+                    <Icon className={`w-6 h-6 ${isDark ? 'text-white' : 'text-zinc-900'}`} />
+                    <div className={`text-base font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{card.title}</div>
+                    <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{card.desc}</p>
+                    <span className={`mt-auto text-xs font-semibold flex items-center gap-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                      {lang === 'en' ? 'Open' : 'Abrir'}
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -527,51 +523,6 @@ export function HomeWorkbench({
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* VIEW 8: DESCUBRIMIENTO & RECURSOS (Also includes Step 6 Library & Playbooks) */}
-        {(activeSidebarItem === 'descubrimiento' || activeSidebarItem === 'recursos') && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-              {activeSidebarItem === 'descubrimiento' ? 'Descubrimiento' : 'Biblioteca de recursos'}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div 
-                onClick={() => onSelectSidebarItem('websites')}
-                className={`p-6 rounded-2xl border transition-all cursor-pointer ${
-                  isDark ? 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                <Globe className="w-6 h-6 text-indigo-500 mb-2" />
-                <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Sitios Web de Referencia</div>
-                <div className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>Explora arquitecturas web publicadas por 4haus Studio.</div>
-              </div>
-              <div 
-                onClick={onOpenTutorials}
-                className={`p-6 rounded-2xl border transition-all cursor-pointer ${
-                  isDark ? 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                <Play className="w-6 h-6 text-emerald-500 mb-2" />
-                <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Tutoriales del Mes</div>
-                <div className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>Aprende a orquestar Claude con MCP y crear sitios web completos.</div>
-              </div>
-            </div>
-
-            <LeadNichoEngine
-              lang={lang}
-              themeMode={themeMode}
-              initialStep="paso6-recursos"
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              preloadData={preloadData}
-              onOpenDanielModal={onOpenDanielModal}
-              onOpenTutorialsModal={onOpenTutorials}
-              onOpenBooksModal={onOpenBooksModal}
-              onOpenLivePreview={onOpenLivePreview}
-            />
           </div>
         )}
 

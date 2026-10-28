@@ -179,9 +179,9 @@ export function AppSidebar({
 
           {[
             { id: 'inicio', label: t.home, icon: Home },
+            { id: 'websites', label: lang === 'en' ? 'Templates' : 'Plantillas', icon: LayoutTemplate },
             { id: 'voz', label: t.customVoice, icon: Mic2, hasPlus: true },
-            { id: 'descubrimiento', label: t.discovery, icon: Compass },
-            { id: 'recursos', label: t.resourceLibrary, icon: FolderGit2 },
+            { id: 'aprende', label: lang === 'en' ? 'Learn' : 'Aprende', icon: BookOpen },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
@@ -228,21 +228,23 @@ export function AppSidebar({
             <div className={`px-3 text-[11px] font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between ${
               isDark ? 'text-emerald-400' : 'text-emerald-700'
             }`}>
-              <span>{lang === 'en' ? 'Growth & Niche OS' : 'Captación & Nicho'}</span>
-              <span className="text-[9px] font-mono text-emerald-500">LEADNICHO</span>
+              <span>{lang === 'en' ? 'Business' : 'Negocio'}</span>
             </div>
           )}
 
           {[
-            { id: 'growth-os', label: lang === 'en' ? 'Growth OS (7 Steps)' : 'Flujo Captación (7 Pasos)', icon: Target },
-            { id: 'negocio-perfil', label: lang === 'en' ? '1. Business & Niche' : '1. Negocio & Nicho IA', icon: Building2 },
-            { id: 'prospectos-crm', label: lang === 'en' ? '2. Prospects CRM' : '2. CRM Prospectos', icon: Users },
-            { id: 'campanas-ia', label: lang === 'en' ? '3. Campaigns Engine' : '3. Campañas Multicanal', icon: Send },
-            { id: 'landings-brief', label: lang === 'en' ? '4. Landing Builder' : '4. Landing Pages & Brief', icon: LayoutTemplate },
-            { id: 'conexiones-api', label: lang === 'en' ? '5. Connections Status' : '5. Estado Conexiones', icon: Link2 },
+            // Una sola entrada: los pasos (negocio, CRM, campañas, landing, conexiones) son pestañas dentro.
+            { id: 'growth-os', label: lang === 'en' ? 'Win clients' : 'Captar clientes', icon: Target },
           ].map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.id;
+            const isActive = [
+              'growth-os',
+              'negocio-perfil',
+              'prospectos-crm',
+              'campanas-ia',
+              'landings-brief',
+              'conexiones-api',
+            ].includes(activeItem);
             return (
               <button
                 key={item.id}
@@ -274,10 +276,8 @@ export function AppSidebar({
           )}
 
           {[
-            { id: 'websites', label: t.websitesLibrary, icon: Globe, badge: 'New' },
-            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: '14vo' },
-            { id: 'store', label: t.store, icon: ShoppingBag },
-            { id: 'knowledge', label: t.knowledgeLibrary, icon: BookOpen },
+            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: undefined as string | undefined },
+            { id: 'store', label: t.store, icon: ShoppingBag, badge: undefined as string | undefined },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;

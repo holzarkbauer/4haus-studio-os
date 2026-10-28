@@ -136,10 +136,12 @@ interface HomeTemplatesShowcaseProps {
   lang: Language;
   themeMode?: 'light' | 'dark';
   onUseTemplatePrompt: (prompt: string) => void;
-  onBrowseAll: () => void;
+  onBrowseAll?: () => void;
+  /** true = solo la galería (para la sección Plantillas del menú lateral) */
+  galleryOnly?: boolean;
 }
 
-export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplatePrompt, onBrowseAll }: HomeTemplatesShowcaseProps) {
+export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplatePrompt, onBrowseAll, galleryOnly = false }: HomeTemplatesShowcaseProps) {
   const isDark = themeMode === 'dark';
   const isEn = lang === 'en';
   const [activeCategory, setActiveCategory] = useState<'todas' | TemplateCategory>('todas');
@@ -182,9 +184,11 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
       {/* 1. Empieza con una plantilla */}
       <section className="max-w-6xl mx-auto w-full space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {galleryOnly ? <span /> : (
           <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>
             {isEn ? 'Start with a template' : 'Empieza con una plantilla'}
           </h2>
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             {CATEGORY_LABELS.map((cat) => (
               <button
@@ -204,6 +208,7 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
                 {isEn ? cat.en : cat.es}
               </button>
             ))}
+            {onBrowseAll && (
             <button
               type="button"
               onClick={onBrowseAll}
@@ -212,6 +217,7 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
               {isEn ? 'Browse all' : 'Ver todas'}
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
+            )}
           </div>
         </div>
 
@@ -280,6 +286,7 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
         </div>
       </section>
 
+      {!galleryOnly && (<>
       {/* 2. Cómo ganar dinero */}
       <section className="max-w-6xl mx-auto w-full space-y-6">
         <div className="space-y-2">
@@ -333,6 +340,7 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>
+      </>)}
     </div>
   );
 }
