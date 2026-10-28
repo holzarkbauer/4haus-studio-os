@@ -300,6 +300,8 @@ export default function App() {
                     onOpenTeamModal={() => setTeamDashboardState({ isOpen: true, tab: 'dashboard' })}
                     onOpenPlans={() => setIsPlansModalOpen(true)}
                     onOpenSupport={() => setAboutModalState({ isOpen: true, tab: 'contact' })}
+                    onOpenTutorials={() => setIsTutorialsOpen(true)}
+                    onNavigate={(id) => setActiveSidebarItem(id)}
                     activeItem={activeSidebarItem}
                     onNavigateToLanding={navigateToLanding}
                     currentUser={currentUser}

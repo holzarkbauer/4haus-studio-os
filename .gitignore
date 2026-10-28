@@ -12,3 +12,6 @@ coverage/
 
 # Datos de usuarios que guarda el servidor (nunca en Git)
 data/
+
+# Enlace local a dependencias (entorno de trabajo)
+node_modules

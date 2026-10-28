@@ -32,7 +32,7 @@ import { GuidedPromptHero, GuidedMessage } from './GuidedPromptHero';
 import { LeadNichoEngine, GrowthStepId } from './LeadNichoEngine';
 import { ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { UserDashboard } from './UserDashboard';
-import { HorizontalTutorialsBanner } from './HorizontalTutorialsBanner';
+import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import type { User } from 'firebase/auth';
 
 interface HomeWorkbenchProps {
@@ -107,6 +107,8 @@ export function HomeWorkbench({
 
   const [localGrowthStep, setLocalGrowthStep] = useState<GrowthStepId>('dashboard');
   const [localPreloadData, setLocalPreloadData] = useState<ProjectPreloadPayload | null>(null);
+  // Prompt de la plantilla elegida en el inicio; se carga en la casilla principal.
+  const [templatePrompt, setTemplatePrompt] = useState<string | null>(null);
 
   const growthStep = externalGrowthStep !== undefined ? externalGrowthStep : localGrowthStep;
   const setGrowthStep = (step: GrowthStepId) => {
@@ -180,7 +182,7 @@ export function HomeWorkbench({
         {(activeSidebarItem === 'inicio' || !activeSidebarItem) && (
           <div className="space-y-6 animate-in fade-in duration-200">
             
-            {/* 0. VENTANA PRINCIPAL DE PROMPT GUIADO POR IA ("Donde las ideas se hacen realidad") */}
+            {/* 0. CASILLA DE PROMPT GUIADO (estilo v0) */}
             <GuidedPromptHero
               lang={lang}
               themeMode={themeMode}
@@ -191,13 +193,16 @@ export function HomeWorkbench({
               onNavigateToModule={handleNavigateFromHero}
               onOpenPlans={onOpenPlans}
               onOpenDanielModal={onOpenDanielModal}
+              prefillPrompt={templatePrompt}
+              onPrefillConsumed={() => setTemplatePrompt(null)}
             />
 
-            {/* 1. SECCIÓN HORIZONTAL DE TUTORIALES CON VIDEO EN VIVO A TODO EL ANCHO (1/3 de la altura de la sección superior) */}
-            <HorizontalTutorialsBanner
+            {/* 1. PLANTILLAS CON SU PROMPT + FUNCIONES + LLAMADA FINAL */}
+            <HomeTemplatesShowcase
               lang={lang}
               themeMode={themeMode}
-              onOpenTutorialsModal={onOpenTutorials}
+              onUseTemplatePrompt={(prompt) => setTemplatePrompt(prompt)}
+              onBrowseAll={() => onSelectSidebarItem('websites')}
             />
           </div>
         )}
