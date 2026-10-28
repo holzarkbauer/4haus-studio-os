@@ -30,6 +30,7 @@ import { GrowthStepId } from './components/LeadNichoEngine';
 import { ProjectPreloadPayload } from './types/leadNichoTypes';
 
 import { Language, BackgroundTheme } from './types';
+import { AVAILABLE_LANGUAGES } from './i18n/languages';
 import { SpotifyProvider } from './context/SpotifyContext';
 import { SpotifyMiniPlayer } from './components/SpotifyMiniPlayer';
 import {
@@ -39,8 +40,19 @@ import {
 } from './services/firebaseAuth';
 import type { User } from 'firebase/auth';
 
+function detectBrowserLanguage(): Language {
+  const supported = AVAILABLE_LANGUAGES.map((l) => l.code as string);
+  const preferred = typeof navigator !== 'undefined' ? navigator.languages || [navigator.language] : [];
+  for (const tag of preferred) {
+    const code = String(tag || '').toLowerCase().split('-')[0];
+    if (supported.includes(code)) return code as Language;
+  }
+  return 'es';
+}
+
 export default function App() {
-  const [lang, setLang] = useState<Language>('en');
+  // Idioma inicial según el navegador del visitante; si no está entre los disponibles, español.
+  const [lang, setLang] = useState<Language>(() => detectBrowserLanguage());
   
   // Theme state: defaults to 'beach-waves'
   const [theme, setTheme] = useState<BackgroundTheme>('beach-waves');

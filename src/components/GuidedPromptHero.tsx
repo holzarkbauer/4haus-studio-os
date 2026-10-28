@@ -21,6 +21,9 @@ import {
   FileDown,
   BarChart3,
   BookOpen,
+  Image as ImageIcon,
+  Clapperboard,
+  AudioLines,
 } from 'lucide-react';
 import { Language } from '../types';
 import { GrowthStepId } from './LeadNichoEngine';
@@ -32,6 +35,8 @@ import {
   InfographicModalTab,
 } from './InvestorInfographicModal';
 import { WhaleLogo } from './WhaleLogo';
+
+type CreateCategoryId = 'web' | 'app' | 'agent' | 'image' | 'video' | 'voice';
 
 export interface GuidedMessage {
   role: 'user' | 'assistant';
@@ -79,7 +84,7 @@ export function GuidedPromptHero({
   const isEn = lang === 'en';
   const promptBoxRef = useRef<HTMLTextAreaElement>(null);
 
-  const [selectedCategory, setSelectedCategory] = useState<'app-web' | 'mobile' | 'crm-system' | 'niche-idea'>('app-web');
+  const [selectedCategory, setSelectedCategory] = useState<CreateCategoryId>('web');
   const [promptInput, setPromptInput] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('Daniel 1.0');
   const [showModelMenu, setShowModelMenu] = useState<boolean>(false);
@@ -112,42 +117,68 @@ export function GuidedPromptHero({
     }
   };
 
-  const categories = [
+  // Qué se puede crear en 4haus Studio. "soon" marca lo que todavía no genera resultados reales:
+  // en esos casos Daniel ayuda a planificarlo, pero no produce el archivo final.
+  const categories: { id: CreateCategoryId; label: string; icon: typeof Globe; placeholder: string; soon: boolean }[] = [
     {
-      id: 'app-web' as const,
-      label: lang === 'en' ? 'Web App' : 'App web',
+      id: 'web',
+      label: lang === 'en' ? 'Website' : 'Página web',
       icon: Globe,
+      soon: false,
       placeholder:
         lang === 'en'
-          ? 'Build me a real estate portal or Netflix clone...'
-          : 'Constrúyeme un clon de Netflix, una web inmobiliaria o un sistema de captación...',
+          ? 'A landing page for my restaurant with a 3D scroll hero...'
+          : 'Una landing para mi restaurante con portada 3D al hacer scroll...',
     },
     {
-      id: 'mobile' as const,
-      label: lang === 'en' ? 'Mobile App' : 'App móvil',
+      id: 'app',
+      label: lang === 'en' ? 'App' : 'App',
       icon: Smartphone,
+      soon: false,
       placeholder:
         lang === 'en'
-          ? 'Design a mobile booking and client loyalty app...'
-          : 'Diseña una app móvil de reservas y seguimiento de clientes...',
+          ? 'A booking app for my clinic with reminders...'
+          : 'Una app de reservas para mi clínica con recordatorios...',
     },
     {
-      id: 'crm-system' as const,
-      label: lang === 'en' ? 'CRM & Funnel' : 'Sistema & CRM',
-      icon: LayoutGrid,
+      id: 'agent',
+      label: lang === 'en' ? 'AI agent' : 'Agente de IA',
+      icon: Bot,
+      soon: true,
       placeholder:
         lang === 'en'
-          ? 'Create a niche lead capture system with AI qualification...'
-          : 'Créame un sistema de captación de clientes por nicho con CRM y campañas...',
+          ? 'An assistant that answers my customers on WhatsApp...'
+          : 'Un asistente que responda a mis clientes por WhatsApp...',
     },
     {
-      id: 'niche-idea' as const,
-      label: lang === 'en' ? 'Niche Strategy' : 'Estrategia & Nicho',
-      icon: Lightbulb,
+      id: 'image',
+      label: lang === 'en' ? 'Image' : 'Imagen',
+      icon: ImageIcon,
+      soon: true,
       placeholder:
         lang === 'en'
-          ? 'Help me define my niche, 3 buyer personas and value proposition...'
-          : 'Ayúdame a definir mi nicho, 3 buyer personas y mi oferta de alto valor...',
+          ? 'Product photo of a perfume on black marble...'
+          : 'Foto de producto de un perfume sobre mármol negro...',
+    },
+    {
+      id: 'video',
+      label: lang === 'en' ? 'Video' : 'Video',
+      icon: Clapperboard,
+      soon: true,
+      placeholder:
+        lang === 'en'
+          ? 'A 15-second ad for my clothing brand...'
+          : 'Un anuncio de 15 segundos para mi marca de ropa...',
+    },
+    {
+      id: 'voice',
+      label: lang === 'en' ? 'Voice' : 'Voz',
+      icon: AudioLines,
+      soon: true,
+      placeholder:
+        lang === 'en'
+          ? 'A warm voice-over for my website intro...'
+          : 'Una locución cálida para la presentación de mi web...',
     },
   ];
 
@@ -834,6 +865,11 @@ export function GuidedPromptHero({
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{cat.label}</span>
+                  {cat.soon && (
+                    <span className={`text-[9px] font-semibold ${isSelected ? 'opacity-70' : 'text-[#86868B]'}`}>
+                      {isEn ? 'soon' : 'pronto'}
+                    </span>
+                  )}
                 </button>
               );
             })}

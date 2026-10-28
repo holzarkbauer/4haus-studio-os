@@ -8,7 +8,7 @@ import heroStudioImg from '../assets/images/apple_style_hero_studio_179162446789
 
 // Plantillas del inicio. Cada una trae el prompt que se carga en la casilla al elegirla.
 // Para añadir una plantilla nueva basta con agregar un objeto a esta lista.
-type TemplateCategory = 'landing' | 'tienda' | 'app' | 'dashboard';
+type TemplateCategory = 'premium3d' | 'landing' | 'tienda' | 'app' | 'dashboard';
 
 interface HomeTemplate {
   id: string;
@@ -16,11 +16,67 @@ interface HomeTemplate {
   name: { es: string; en: string };
   description: { es: string; en: string };
   image?: string;
-  preview?: 'studio' | 'store';
+  preview?: 'studio' | 'store' | 'product' | 'luxury' | 'restaurant';
   prompt: { es: string; en: string };
 }
 
+// Orden de la galería: primero las portadas 3D premium.
 const HOME_TEMPLATES: HomeTemplate[] = [
+  {
+    id: 'estudio-creativo-3d',
+    category: 'premium3d',
+    name: { es: 'Estudio creativo con portada 3D', en: 'Creative studio with 3D hero' },
+    description: { es: 'Portafolio oscuro con objeto 3D protagonista', en: 'Dark portfolio with a hero 3D object' },
+    preview: 'studio',
+    prompt: {
+      es: 'Crea la web de un estudio creativo. Portada oscura y cinematográfica con un objeto 3D que gira al hacer scroll, titular enorme, proyectos destacados en cuadrícula, servicios, proceso de trabajo en 4 pasos y llamada a la acción para agendar una reunión.',
+      en: 'Create a website for a creative studio. Dark cinematic hero with a 3D object that rotates on scroll, huge headline, featured projects grid, services, a 4-step process and a call to action to book a meeting.',
+    },
+  },
+  {
+    id: 'lanzamiento-producto-3d',
+    category: 'premium3d',
+    name: { es: 'Lanzamiento de producto en 3D', en: '3D product launch' },
+    description: { es: 'El producto gira y se desarma con el scroll', en: 'The product rotates and explodes on scroll' },
+    preview: 'product',
+    prompt: {
+      es: 'Crea la landing de lanzamiento de un producto tecnológico. Portada con el producto en 3D que gira y se desarma en piezas al hacer scroll, cada pieza explica una característica, sección de especificaciones, precio y botón de preventa. Estilo oscuro, premium, tipo presentación de Apple.',
+      en: 'Create a launch landing page for a tech product. Hero with the product in 3D that rotates and explodes into parts on scroll, each part explaining a feature, a specs section, price and a pre-order button. Dark, premium, keynote-like style.',
+    },
+  },
+  {
+    id: 'marca-de-lujo',
+    category: 'premium3d',
+    name: { es: 'Marca de lujo', en: 'Luxury brand' },
+    description: { es: 'Joyería o perfumería con brillo y profundidad', en: 'Jewelry or perfume with shine and depth' },
+    preview: 'luxury',
+    prompt: {
+      es: 'Crea la web de una marca de lujo de joyería. Portada negra con una joya en 3D que refleja la luz al mover el cursor, colección destacada, historia de la marca, galería editorial y formulario para pedir cita privada. Tipografía con serifa, detalles dorados, mucho espacio negativo.',
+      en: 'Create a website for a luxury jewelry brand. Black hero with a 3D jewel that reflects light as the cursor moves, featured collection, brand story, editorial gallery and a private appointment form. Serif typography, gold details, lots of negative space.',
+    },
+  },
+  {
+    id: 'portafolio-arquitectura',
+    category: 'premium3d',
+    name: { es: 'Portafolio de arquitectura', en: 'Architecture portfolio' },
+    description: { es: 'Proyectos a pantalla completa con scroll', en: 'Full-screen projects with scroll' },
+    image: heroStudioImg,
+    prompt: {
+      es: 'Crea el portafolio de un estudio de arquitectura. Proyectos a pantalla completa que cambian con el scroll, una maqueta 3D del proyecto principal que se puede girar, ficha de cada proyecto con planos e imágenes, sección sobre el estudio y contacto. Estilo minimalista, blanco y negro.',
+      en: 'Create a portfolio for an architecture studio. Full-screen projects that change on scroll, a rotatable 3D model of the main project, project pages with plans and images, an about section and contact. Minimalist black and white style.',
+    },
+  },
+  {
+    id: 'restaurante',
+    category: 'landing',
+    name: { es: 'Restaurante', en: 'Restaurant' },
+    description: { es: 'Carta, reservas y ubicación', en: 'Menu, bookings and location' },
+    preview: 'restaurant',
+    prompt: {
+      es: 'Crea la web de un restaurante. Portada con un plato destacado, carta por categorías con precios, galería del local, opiniones, mapa con la ubicación y formulario de reservas. Estilo cálido y elegante, pensado primero para móvil.',
+      en: 'Create a website for a restaurant. Hero with a signature dish, menu by category with prices, venue gallery, reviews, a location map and a booking form. Warm, elegant, mobile-first style.',
+    },
+  },
   {
     id: 'landing-inmobiliaria',
     category: 'landing',
@@ -30,17 +86,6 @@ const HOME_TEMPLATES: HomeTemplate[] = [
     prompt: {
       es: 'Crea una landing page para una inmobiliaria premium. Secciones: portada con una propiedad destacada y animación 3D suave al hacer scroll, propiedades en venta con filtros, galería, testimonios y formulario de contacto. Estilo elegante, mucho espacio en blanco, tipografía grande.',
       en: 'Create a landing page for a premium real estate agency. Sections: hero with a featured property and a smooth 3D scroll animation, listings with filters, gallery, testimonials and a contact form. Elegant style, lots of white space, large typography.',
-    },
-  },
-  {
-    id: 'estudio-creativo-3d',
-    category: 'landing',
-    name: { es: 'Estudio creativo con portada 3D', en: 'Creative studio with 3D hero' },
-    description: { es: 'Portafolio oscuro con objeto 3D protagonista', en: 'Dark portfolio with a hero 3D object' },
-    preview: 'studio',
-    prompt: {
-      es: 'Crea la web de un estudio creativo. Portada oscura y cinematográfica con un objeto 3D que gira al hacer scroll, titular enorme, proyectos destacados en cuadrícula, servicios, proceso de trabajo en 4 pasos y llamada a la acción para agendar una reunión.',
-      en: 'Create a website for a creative studio. Dark cinematic hero with a 3D object that rotates on scroll, huge headline, featured projects grid, services, a 4-step process and a call to action to book a meeting.',
     },
   },
   {
@@ -76,21 +121,11 @@ const HOME_TEMPLATES: HomeTemplate[] = [
       en: 'Create a web app with an AI assistant for a local business. Chat that answers FAQs, shows services with prices and lets visitors book an appointment. Include a simple panel to see bookings.',
     },
   },
-  {
-    id: 'portafolio-arquitectura',
-    category: 'landing',
-    name: { es: 'Portafolio de arquitectura', en: 'Architecture portfolio' },
-    description: { es: 'Proyectos a pantalla completa con scroll', en: 'Full-screen projects with scroll' },
-    image: heroStudioImg,
-    prompt: {
-      es: 'Crea el portafolio de un estudio de arquitectura. Proyectos a pantalla completa que cambian con el scroll, ficha de cada proyecto con planos e imágenes, sección sobre el estudio y contacto. Estilo minimalista, blanco y negro.',
-      en: 'Create a portfolio for an architecture studio. Full-screen projects that change on scroll, project pages with plans and images, an about section and contact. Minimalist black and white style.',
-    },
-  },
 ];
 
 const CATEGORY_LABELS: { id: 'todas' | TemplateCategory; es: string; en: string }[] = [
   { id: 'todas', es: 'Todas', en: 'All' },
+  { id: 'premium3d', es: 'Portadas 3D', en: '3D heroes' },
   { id: 'landing', es: 'Landing pages', en: 'Landing pages' },
   { id: 'tienda', es: 'Tiendas online', en: 'Online stores' },
   { id: 'app', es: 'Apps', en: 'Apps' },
@@ -202,6 +237,25 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
                   <div className="w-full h-full bg-black flex flex-col items-center justify-center gap-3">
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-200 via-zinc-500 to-zinc-900 rotate-12 shadow-2xl" />
                     <span className="text-white text-2xl font-light italic tracking-tight">Create. Inspire.</span>
+                  </div>
+                ) : tpl.preview === 'product' ? (
+                  <div className="w-full h-full bg-[radial-gradient(circle_at_50%_45%,#3a3a44_0%,#0b0b0f_60%)] flex flex-col items-center justify-center gap-3">
+                    <div className="w-20 h-20 rounded-full bg-[radial-gradient(circle_at_35%_30%,#ffffff_0%,#9aa4b8_35%,#2a2f3a_75%)] shadow-[0_0_60px_rgba(150,170,255,0.35)]" />
+                    <span className="text-white/90 text-sm font-semibold tracking-[0.3em]">AURA ONE</span>
+                  </div>
+                ) : tpl.preview === 'luxury' ? (
+                  <div className="w-full h-full bg-black flex flex-col items-center justify-center gap-4">
+                    <div className="w-14 h-14 rounded-full border-2 border-[#C9A96E] shadow-[0_0_30px_rgba(201,169,110,0.35)]" />
+                    <span className="text-[#E8D5A8] text-xl tracking-[0.35em] font-serif">MAISON</span>
+                  </div>
+                ) : tpl.preview === 'restaurant' ? (
+                  <div className="w-full h-full bg-[#2B1D16] p-5 flex flex-col justify-between">
+                    <span className="text-[#F3E3CF] text-2xl font-serif italic">Sabor</span>
+                    <div className="flex items-end gap-3">
+                      <div className="w-16 h-16 rounded-full bg-[#C8743A]" />
+                      <div className="w-12 h-12 rounded-full bg-[#E9C27D]" />
+                      <div className="w-10 h-10 rounded-full bg-[#8E4A2A]" />
+                    </div>
                   </div>
                 ) : (
                   <div className="w-full h-full bg-[#F4F1EC] p-4 flex flex-col gap-3">
