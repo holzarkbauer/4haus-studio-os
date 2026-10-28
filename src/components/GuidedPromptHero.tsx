@@ -412,6 +412,8 @@ export function GuidedPromptHero({
         {/* Centro: aviso de créditos + titular (estilo v0) */}
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <div className="flex items-center justify-center gap-2">
+            {/* Solo sin sesión: con sesión, los créditos se ven en el menú del avatar */}
+            {!userId && (
             <button
               type="button"
               onClick={onOpenPlans}
@@ -423,6 +425,7 @@ export function GuidedPromptHero({
               <span>{isEn ? 'Start with 8,000 free credits' : 'Empieza con 8000 créditos gratis'}</span>
               <ArrowRight className="w-3 h-3" />
             </button>
+            )}
             {messages.length > 0 && (
               <button
                 type="button"

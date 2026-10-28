@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, ChevronRight, LayoutTemplate, MessageSquare, MonitorSmartphone, Rocket, Clapperboard, Wand2 } from 'lucide-react';
+import { ArrowRight, ChevronRight, LayoutTemplate, MonitorSmartphone, Rocket, Wand2 } from 'lucide-react';
 import { Language } from '../types';
 import webEngineImg from '../assets/images/apple_bento_web_engine_1791624476388.jpg';
 import growthCrmImg from '../assets/images/apple_bento_growth_crm_1791624494223.jpg';
@@ -149,36 +149,30 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
   const card = isDark ? 'bg-[#1D1D1F] border-white/10' : 'bg-white border-black/[0.08]';
   const muted = isDark ? 'text-zinc-400' : 'text-[#6E6E73]';
 
-  // Funciones del producto. "soon" marca lo que todavía no está construido, para no prometer de más.
-  const features = [
+  // Cómo gana dinero el usuario, en 3 pasos. "soon" marca lo que todavía no está construido.
+  const moneySteps = [
     {
       icon: LayoutTemplate,
-      title: isEn ? 'Start from a template' : 'Empieza con una plantilla',
-      desc: isEn ? 'Each template comes with its prompt ready to adapt.' : 'Cada plantilla trae su prompt listo para adaptarlo.',
-      soon: false,
-    },
-    {
-      icon: MessageSquare,
-      title: isEn ? 'Guided by Daniel' : 'Daniel te guía',
-      desc: isEn ? 'Answer a few questions and get a clear brief.' : 'Responde unas preguntas y obtén un brief claro.',
+      title: isEn ? 'Create with a template' : 'Crea con una plantilla',
+      desc: isEn
+        ? 'Pick a template and Daniel adapts it to your client: their business, their texts, their style.'
+        : 'Elige una plantilla y Daniel la adapta a tu cliente: su negocio, sus textos, su estilo.',
       soon: false,
     },
     {
       icon: MonitorSmartphone,
-      title: isEn ? 'Mobile and desktop preview' : 'Vista previa móvil y escritorio',
-      desc: isEn ? 'Review your site before downloading it.' : 'Revisa tu web antes de descargarla.',
+      title: isEn ? 'Show the mockup to your client' : 'Enséñale la maqueta a tu cliente',
+      desc: isEn
+        ? 'Share a preview of the hero and the site structure, on mobile and desktop, before paying anything.'
+        : 'Comparte una vista previa de la portada y la estructura de la web, en móvil y escritorio, antes de pagar nada.',
       soon: true,
     },
     {
       icon: Rocket,
-      title: isEn ? 'Publish in one click' : 'Publica en un clic',
-      desc: isEn ? 'Your site online with your own domain.' : 'Tu web en línea con tu propio dominio.',
-      soon: true,
-    },
-    {
-      icon: Clapperboard,
-      title: isEn ? 'Images, video and voice' : 'Imagen, video y voz',
-      desc: isEn ? 'Create the media your site needs.' : 'Crea los medios que tu web necesita.',
+      title: isEn ? 'Download it and get paid' : 'Descárgala y cobra',
+      desc: isEn
+        ? 'Download the full site from 27 USD and charge your client the price you agree on.'
+        : 'Descarga la web completa desde 27 USD y cóbrale a tu cliente el precio que acuerden.',
       soon: true,
     },
   ];
@@ -286,37 +280,38 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
         </div>
       </section>
 
-      {/* 2. Funciones */}
-      <section className="max-w-6xl mx-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className={`rounded-2xl border p-7 flex flex-col justify-center min-h-[200px] ${card}`}>
-          <h3 className={`text-3xl sm:text-4xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>
-            {isEn ? 'Write.' : 'Escribe.'}
-            <br />
-            {isEn ? 'Build. Sell.' : 'Construye. Vende.'}
-          </h3>
-          <p className={`mt-3 text-sm ${muted}`}>
-            {isEn
-              ? 'Describe your idea, choose a template and turn it into a site you can sell.'
-              : 'Describe tu idea, elige una plantilla y conviértela en una web que puedas vender.'}
+      {/* 2. Cómo ganar dinero */}
+      <section className="max-w-6xl mx-auto w-full space-y-6">
+        <div className="space-y-2">
+          <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>
+            {isEn ? 'How to earn money with 4haus Studio' : 'Cómo ganar dinero con 4haus Studio'}
+          </h2>
+          <p className={`text-sm ${muted}`}>
+            {isEn ? 'Design sites for businesses and sell them as your own service.' : 'Diseña webs para negocios y véndelas como tu propio servicio.'}
           </p>
         </div>
-        {features.map((f) => {
-          const Icon = f.icon;
-          return (
-            <div key={f.title} className={`rounded-2xl border p-6 min-h-[200px] flex flex-col gap-3 ${card}`}>
-              <div className="flex items-center justify-between">
-                <Icon className={`w-6 h-6 ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`} />
-                {f.soon && (
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 text-zinc-300' : 'bg-black/[0.05] text-[#6E6E73]'}`}>
-                    {isEn ? 'Coming soon' : 'Próximamente'}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {moneySteps.map((step, idx) => {
+            const Icon = step.icon;
+            return (
+              <div key={step.title} className={`rounded-2xl border p-6 min-h-[210px] flex flex-col gap-3 ${card}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isDark ? 'bg-white text-black' : 'bg-[#1D1D1F] text-white'}`}>
+                    {idx + 1}
                   </span>
-                )}
+                  {step.soon && (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 text-zinc-300' : 'bg-black/[0.05] text-[#6E6E73]'}`}>
+                      {isEn ? 'Coming soon' : 'Próximamente'}
+                    </span>
+                  )}
+                </div>
+                <Icon className={`w-6 h-6 ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`} />
+                <div className={`text-base font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{step.title}</div>
+                <p className={`text-sm ${muted}`}>{step.desc}</p>
               </div>
-              <div className={`text-base font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{f.title}</div>
-              <p className={`text-sm ${muted}`}>{f.desc}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </section>
 
       {/* 3. Llamada final */}

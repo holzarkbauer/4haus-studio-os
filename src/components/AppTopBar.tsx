@@ -92,10 +92,11 @@ export function AppTopBar({
         <button
           type="button"
           onClick={onNavigateToLanding}
-          className="text-[15px] font-bold tracking-tight text-[#1D1D1F] dark:text-white cursor-pointer whitespace-nowrap"
-          title={isEn ? 'Back to 4haus.us' : 'Volver a 4haus.us'}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/10 cursor-pointer shrink-0"
+          title={isEn ? '4haus Studio · Back to 4haus.us' : '4haus Studio · Volver a 4haus.us'}
+          aria-label="4haus Studio"
         >
-          4haus Studio
+          <img src="/Frame_3.svg" alt="4haus Studio" className="w-7 h-7" />
         </button>
       </div>
 
