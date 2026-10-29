@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import dotenv from 'dotenv';
 import { registerDanielRoutes } from './server/daniel.ts';
+import { registerAuth } from './server/auth.ts';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '5mb' }));
+// Seguridad: verificar quién hace cada petición antes de cualquier ruta /api.
+registerAuth(app);
 
 // Persistent data file path
 const DATA_DIR = path.resolve(process.cwd(), 'data');

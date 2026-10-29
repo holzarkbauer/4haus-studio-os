@@ -1,7 +1,7 @@
 // Identificador del espacio de trabajo que el navegador envía al servidor.
 // Con sesión iniciada es el UID de Google. Sin sesión, un identificador anónimo propio de este
 // navegador, para no mezclar datos de visitantes en un espacio compartido.
-// (La verificación real de identidad en el servidor llega con la tarea de seguridad.)
+// El servidor no se fía de este valor: con sesión verifica el token de Firebase (ver authFetch.ts).
 export function getWorkspaceId(userId?: string | null): string {
   if (userId) return userId;
   try {

@@ -125,7 +125,11 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
 
   async function call(path: string, body: unknown) {
     const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      // Si falta iniciar sesión, mostramos el motivo real en vez de un error genérico.
+      throw new Error(res.status === 401 || res.status === 403 ? String(data.error || '') : '');
+    }
     return res.json();
   }
 
@@ -151,8 +155,8 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
       const data = await call('/api/studio/business-profile', profile);
       setBusinessId(data.businessProfile?.id || null);
       setStep(1);
-    } catch {
-      setError(isEn ? 'Could not save. Try again.' : 'No se pudo guardar. Inténtalo de nuevo.');
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Could not save. Try again.' : 'No se pudo guardar. Inténtalo de nuevo.'));
     } finally {
       setBusy(false);
     }
@@ -165,8 +169,8 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
       const ws = await fetch('/api/studio/workspace', { headers }).then((r) => r.json());
       const data = await call('/api/studio/generate-niche', { businessProfile: ws.businessProfile });
       setNiche(data.nicheProfile || null);
-    } catch {
-      setError(isEn ? 'Could not generate. Try again.' : 'No se pudo generar. Inténtalo de nuevo.');
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Could not generate. Try again.' : 'No se pudo generar. Inténtalo de nuevo.'));
     } finally {
       setBusy(false);
     }
@@ -191,8 +195,8 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
       });
       if (data.createdProspect) setProspects((prev) => [data.createdProspect, ...prev]);
       setNewProspect({ name: '', company: '', contact: '' });
-    } catch {
-      setError(isEn ? 'Could not add the contact.' : 'No se pudo añadir el contacto.');
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Could not add the contact.' : 'No se pudo añadir el contacto.'));
     } finally {
       setBusy(false);
     }
@@ -213,8 +217,8 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
         cta: isEn ? 'Would a short call this week work for you?' : '¿Te parece si conversamos 15 minutos esta semana?',
       });
       setCampaign(data.campaign || null);
-    } catch {
-      setError(isEn ? 'Could not write the message.' : 'No se pudo escribir el mensaje.');
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Could not write the message.' : 'No se pudo escribir el mensaje.'));
     } finally {
       setBusy(false);
     }
