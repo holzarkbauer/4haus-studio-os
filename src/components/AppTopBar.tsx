@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Users, ChevronDown, Menu } from 'lucide-react';
+import { Users, ChevronDown } from 'lucide-react';
 import { Language } from '../types';
 import { MyTeamDropdown } from './MyTeamDropdown';
 import { User } from 'firebase/auth';
@@ -74,29 +74,18 @@ export function AppTopBar({
     <header className="h-14 px-4 sm:px-6 border-b border-black/[0.08] dark:border-white/10 bg-white/85 dark:bg-black/80 apple-glass-nav grid grid-cols-[1fr_auto_1fr] items-center sticky top-0 z-30 transition-colors">
       {/* Izquierda: menú lateral + logo */}
       <div className="flex items-center gap-3 min-w-0">
-        {onToggleSidebar && (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-              isSidebarOpen
-                ? 'bg-[#1D1D1F] text-white border-[#1D1D1F] dark:bg-white dark:text-black dark:border-white'
-                : 'border-black/[0.08] dark:border-white/10 bg-white hover:bg-black/[0.03] dark:bg-[#1D1D1F] dark:hover:bg-zinc-800 text-[#1D1D1F] dark:text-white'
-            }`}
-            title={isEn ? 'Open tools menu' : 'Abrir menú de herramientas'}
-            aria-label={isEn ? 'Toggle navigation menu' : 'Alternar menú de navegación'}
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-        )}
+        {/* El logo de 4haus abre y cierra el menú de herramientas (antes eran tres líneas). */}
         <button
           type="button"
-          onClick={onNavigateToLanding}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/10 cursor-pointer shrink-0"
-          title={isEn ? '4haus Studio · Back to 4haus.us' : '4haus Studio · Volver a 4haus.us'}
-          aria-label="4haus Studio"
+          onClick={onToggleSidebar ?? onNavigateToLanding}
+          aria-expanded={onToggleSidebar ? Boolean(isSidebarOpen) : undefined}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors cursor-pointer shrink-0 ${
+            isSidebarOpen ? 'bg-black/[0.06] dark:bg-white/10' : 'hover:bg-black/[0.04] dark:hover:bg-white/10'
+          }`}
+          title={isEn ? 'Open tools menu' : 'Abrir menú de herramientas'}
+          aria-label={isEn ? 'Toggle tools menu' : 'Abrir o cerrar el menú de herramientas'}
         >
-          <img src="/Frame_3.svg" alt="4haus Studio" className="w-7 h-7" />
+          <img src="/Frame_3.svg" alt="" className="w-7 h-7" />
         </button>
       </div>
 
@@ -174,6 +163,7 @@ export function AppTopBar({
           onToggleThemeMode={onToggleThemeMode}
           onSetLang={onSetLang}
           onOpenSupport={onOpenSupport}
+          onNavigateToLanding={onNavigateToLanding}
         />
       </div>
     </header>

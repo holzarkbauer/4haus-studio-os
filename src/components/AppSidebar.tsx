@@ -39,7 +39,6 @@ import {
   LayoutTemplate,
   Building2,
   Link2,
-  Menu,
   X
 } from 'lucide-react';
 import { Language } from '../types';
@@ -106,7 +105,7 @@ export function AppSidebar({
             : 'border-black/[0.08] bg-white/95 text-[#1D1D1F]'
         }`}
       >
-        {/* Top 3-Line Menu Trigger (Replaces Logo) + Collapse/Close Controls */}
+        {/* Logo de 4haus (cierra el menú) + controles de colapsar/cerrar */}
         <div className={`h-14 px-4 border-b flex items-center justify-between transition-colors shrink-0 ${
           isDark ? 'border-zinc-800' : 'border-zinc-200'
         }`}>
@@ -120,11 +119,9 @@ export function AppSidebar({
             }`}
             title={lang === 'en' ? 'Close menu' : 'Cerrar menú'}
           >
-            <Menu className="w-5 h-5 shrink-0" />
+            <img src="/Frame_3.svg" alt="" className="w-7 h-7 shrink-0" />
             {!isCollapsed && (
-              <span className="text-xs font-bold tracking-tight truncate">
-                {lang === 'en' ? 'Menu' : 'Menú'}
-              </span>
+              <span className="text-sm font-semibold tracking-tight truncate">4haus Studio</span>
             )}
           </button>
 

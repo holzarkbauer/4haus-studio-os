@@ -25,7 +25,7 @@ import {
   Gift,
   BookOpen
 } from 'lucide-react';
-import { Sun, Moon, Globe, Headphones, LogIn } from 'lucide-react';
+import { Sun, Moon, Globe, Headphones, LogIn, Home } from 'lucide-react';
 import { Language } from '../types';
 import { AVAILABLE_LANGUAGES } from '../i18n/languages';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -45,6 +45,7 @@ interface MyTeamDropdownProps {
   onToggleThemeMode?: () => void;
   onSetLang?: (lang: Language) => void;
   onOpenSupport?: () => void;
+  onNavigateToLanding?: () => void;
 }
 
 export function MyTeamDropdown({
@@ -61,6 +62,7 @@ export function MyTeamDropdown({
   onToggleThemeMode,
   onSetLang,
   onOpenSupport,
+  onNavigateToLanding,
 }: MyTeamDropdownProps) {
   const isEn = lang === 'en';
   const isDark = themeMode === 'dark';
@@ -273,6 +275,20 @@ export function MyTeamDropdown({
           >
             <Headphones className="w-4 h-4 shrink-0 text-zinc-400" />
             <span>{isEn ? 'Support and contact' : 'Soporte y contacto'}</span>
+          </button>
+        )}
+
+        {onNavigateToLanding && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onNavigateToLanding();
+            }}
+            className={rowClass}
+          >
+            <Home className="w-4 h-4 shrink-0 text-zinc-400" />
+            <span>{isEn ? 'Back to 4haus.us' : 'Volver a 4haus.us'}</span>
           </button>
         )}
       </div>
