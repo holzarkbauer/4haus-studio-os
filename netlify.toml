@@ -1,0 +1,15 @@
+# Página de 4haus Studio en Netlify (www.4haus.us).
+# El servidor (IA, datos) vive en Render; su dirección se pone en la variable
+# VITE_API_BASE_URL del panel de Netlify (p. ej. https://4haus-studio-api.onrender.com).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Aplicación de una sola página: cualquier ruta abre index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

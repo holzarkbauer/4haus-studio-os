@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import { loadServerDoc, saveServerDoc } from './storage.ts';
 
 // ============================================================================
 // DANIEL · asistente de 4haus Studio
@@ -56,6 +57,36 @@ const usage = {
   spentUsd: 0,
   perWorkspace: new Map<string, { requests: number; research: number }>(),
 };
+
+// El gasto del día también se guarda en Firestore: si Render duerme y reinicia el servidor,
+// el contador no vuelve a cero (si no, el tope diario se podría saltar).
+let loadedDay = '';
+async function ensureUsageLoaded() {
+  resetIfNewDay();
+  if (loadedDay === usage.day) return;
+  const saved = await loadServerDoc<{ spentUsd?: number; perWorkspace?: Record<string, { requests: number; research: number }> }>(
+    `danielUsage-${usage.day}`,
+  );
+  if (saved) {
+    usage.spentUsd = Math.max(usage.spentUsd, Number(saved.spentUsd) || 0);
+    for (const [id, v] of Object.entries(saved.perWorkspace || {})) {
+      const cur = usage.perWorkspace.get(id) || { requests: 0, research: 0 };
+      usage.perWorkspace.set(id, {
+        requests: Math.max(cur.requests, v.requests || 0),
+        research: Math.max(cur.research, v.research || 0),
+      });
+    }
+  }
+  loadedDay = usage.day;
+}
+
+function saveUsage() {
+  saveServerDoc(`danielUsage-${usage.day}`, {
+    spentUsd: usage.spentUsd,
+    perWorkspace: Object.fromEntries(usage.perWorkspace),
+    updatedAt: new Date().toISOString(),
+  });
+}
 
 function resetIfNewDay() {
   const today = new Date().toISOString().slice(0, 10);
@@ -219,7 +250,7 @@ async function callGemini(apiKey: string, mode: Mode, system: string, messages: 
 
 export function registerDanielRoutes(app: Express, readWorkspace: (userId?: string | null) => any) {
   app.post('/api/studio/daniel', async (req: Request, res: Response) => {
-    resetIfNewDay();
+    await ensureUsageLoaded();
     const workspaceId = String(req.headers['x-user-id'] || 'default').slice(0, 128);
     const mode: Mode = req.body?.mode === 'research' ? 'research' : 'normal';
     const section = String(req.body?.section || 'inicio').slice(0, 60);
@@ -297,6 +328,7 @@ export function registerDanielRoutes(app: Express, readWorkspace: (userId?: stri
       ws.requests += 1;
       if (mode === 'research') ws.research += 1;
       usage.perWorkspace.set(workspaceId, ws);
+      saveUsage();
       console.log(
         `[daniel] ${usage.day} ws=${workspaceId} mode=${mode} model=${result.model} costo=${result.costUsd.toFixed(4)} USD total_dia=${usage.spentUsd.toFixed(4)} USD`
       );

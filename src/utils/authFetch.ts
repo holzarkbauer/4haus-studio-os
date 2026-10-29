@@ -15,6 +15,22 @@ function isOwnApi(url: string): boolean {
   }
 }
 
+// En producción la página (Netlify) y el servidor (Render) están en direcciones distintas:
+// VITE_API_BASE_URL indica dónde está el servidor. En desarrollo queda vacío (misma dirección).
+const API_BASE = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+function withBase(url: string): string {
+  if (!API_BASE) return url;
+  if (url.startsWith('/api/')) return `${API_BASE}${url}`;
+  try {
+    const u = new URL(url);
+    if (u.origin === window.location.origin) return `${API_BASE}${u.pathname}${u.search}`;
+  } catch {
+    /* no es una URL absoluta */
+  }
+  return url;
+}
+
 let installed = false;
 
 export function installAuthFetch() {
@@ -39,6 +55,7 @@ export function installAuthFetch() {
       headers.delete('Authorization');
       headers.set('x-user-id', getWorkspaceId(null));
     }
-    return originalFetch(input, { ...init, headers });
+    const target = input instanceof Request ? new Request(withBase(url), input) : withBase(url);
+    return originalFetch(target, { ...init, headers });
   };
 }

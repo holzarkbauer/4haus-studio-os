@@ -7,15 +7,37 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import dotenv from 'dotenv';
 import { registerDanielRoutes } from './server/daniel.ts';
 import { registerAuth } from './server/auth.ts';
+import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '5mb' }));
+// La página vive en Netlify (www.4haus.us) y llama a este servidor en Render: se permiten solo
+// los orígenes listados en ALLOWED_ORIGINS (separados por comas).
+const ALLOWED_ORIGINS = String(process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+app.use('/api', (req, res, next) => {
+  const origin = String(req.headers.origin || '');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-id');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '600');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(origin && ALLOWED_ORIGINS.includes(origin) ? 204 : 403);
+  next();
+});
+// Comprobación rápida de que el servidor está vivo (Render la usa para saber si arrancó).
+app.get('/healthz', (_req, res) => res.json({ ok: true, storage: storageMode() }));
+
 // Seguridad: verificar quién hace cada petición antes de cualquier ruta /api.
-registerAuth(app);
+registerAuth(app, (workspaceId) => hydrateWorkspace(workspaceId, getUserDataFile(workspaceId)));
 
 // Persistent data file path
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -653,13 +675,13 @@ function readWorkspace(userId?: string | null, userEmail?: string | null, userNa
         );
         if (nonMocked.length !== parsed.prospects.length) {
           parsed.prospects = nonMocked.length > 0 ? nonMocked : JSON.parse(JSON.stringify(INITIAL_WORKSPACE.prospects));
-          fs.writeFileSync(targetFile, JSON.stringify(parsed, null, 2), 'utf-8');
+          writeWorkspace(parsed, userId);
         }
       }
       // Ensure the full 12-department Super Agent Startup Squad is present
       if (!Array.isArray(parsed.agents) || parsed.agents.length < 12) {
         parsed.agents = JSON.parse(JSON.stringify(INITIAL_WORKSPACE.agents));
-        fs.writeFileSync(targetFile, JSON.stringify(parsed, null, 2), 'utf-8');
+        writeWorkspace(parsed, userId);
       }
       return parsed;
     }
@@ -675,7 +697,7 @@ function readWorkspace(userId?: string | null, userEmail?: string | null, userNa
       createdAt: new Date().toISOString(),
     };
   }
-  fs.writeFileSync(targetFile, JSON.stringify(initialCopy, null, 2), 'utf-8');
+  writeWorkspace(initialCopy, userId);
   return initialCopy;
 }
 
@@ -686,6 +708,8 @@ function writeWorkspace(data: any, userId?: string | null) {
   } catch (err) {
     console.error('Error writing studio workspace data:', err);
   }
+  // Copia permanente en Firestore (solo usuarios con sesión y si hay cuenta de servicio).
+  persistWorkspace(userId, data);
 }
 
 // Initialize Gemini Server-Side SDK with required telemetry header
@@ -2376,7 +2400,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`4haus Studio OS Server running at http://0.0.0.0:${PORT}`);
+    console.log(`4haus Studio OS Server running at http://0.0.0.0:${PORT} (datos: ${storageMode()})`);
   });
 }
 

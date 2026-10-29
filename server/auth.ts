@@ -9,11 +9,9 @@
 //   3. Las rutas que gastan dinero de IA exigen sesión verificada.
 // Después de este filtro, `x-user-id` siempre contiene la identidad verificada, así que el
 // resto del servidor (que lee ese encabezado) queda protegido sin cambiar cada ruta.
-import fs from 'fs';
-import path from 'path';
 import type { Express, Request, Response, NextFunction } from 'express';
-import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { adminApp } from './firebaseAdmin.ts';
 
 const ANON_ID = /^anon_[a-z0-9]{6,40}$/i;
 
@@ -28,23 +26,10 @@ const PAID_ROUTES = [
   '/api/studio/super-agent-dispatch',
 ];
 
-function readProjectId(): string | undefined {
-  if (process.env.FIREBASE_PROJECT_ID) return process.env.FIREBASE_PROJECT_ID;
-  try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf8'));
-    return cfg.projectId;
-  } catch {
-    return undefined;
-  }
-}
-
 function adminAuth() {
-  if (!getApps().length) {
-    // Verificar tokens solo necesita el ID del proyecto (no una cuenta de servicio):
-    // las claves públicas de Google se descargan automáticamente.
-    initializeApp({ projectId: readProjectId() });
-  }
-  return getAuth();
+  // Verificar tokens solo necesita el ID del proyecto: las claves públicas de Google se
+  // descargan automáticamente.
+  return getAuth(adminApp());
 }
 
 export interface AuthInfo {
@@ -78,7 +63,7 @@ function deny(res: Response, status: number, es: string) {
   return res.status(status).json({ error: es, reply: es, authRequired: status === 401 });
 }
 
-export function registerAuth(app: Express) {
+export function registerAuth(app: Express, onVerified?: (workspaceId: string) => Promise<void>) {
   app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     const header = String(req.headers.authorization || '');
     const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
@@ -114,6 +99,8 @@ export function registerAuth(app: Express) {
 
     // Desde aquí, la identidad que ve el resto del servidor es la verificada.
     req.auth = info;
+    // Con sesión: si este servidor no tiene aún sus datos (p. ej. tras reiniciarse), se traen de Firestore.
+    if (info.verified && onVerified) await onVerified(info.workspaceId);
     req.headers['x-user-id'] = info.workspaceId;
     if (req.body && typeof req.body === 'object' && 'userId' in req.body) req.body.userId = info.workspaceId;
     try {

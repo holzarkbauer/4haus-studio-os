@@ -1,0 +1,29 @@
+# Servidor de 4haus Studio en Render (plan gratis por ahora; subir a "starter" al empezar a vender).
+# Los valores secretos (sync: false) se escriben en el panel de Render, nunca en este archivo.
+services:
+  - type: web
+    name: 4haus-studio-api
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: NODE_ENV=production npx tsx server.ts
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: ALLOWED_ORIGINS
+        value: https://www.4haus.us,https://4haus.us
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_UIDS
+        sync: false
+      - key: FISH_AUDIO_API_KEY
+        sync: false
+      - key: FISH_AUDIO_REFERENCE_ID
+        sync: false
+      - key: DANIEL_DAILY_BUDGET_USD
+        value: "5"
