@@ -596,17 +596,18 @@ const INITIAL_WORKSPACE = {
     },
     {
       id: 'res_04',
-      title: 'Caso Práctico: 14 Reservas de Obra Nueva en 45 Días con Embudo Dedicado',
+      // Caso real de 4haus. Solo datos confirmados por José; sin métricas hasta tenerlas medidas.
+      title: 'Caso real: tienda online de ropa para AMOOO (amooo.pe)',
       type: 'Caso Práctico',
-      category: 'Marketing Inmobiliario',
-      durationOrFormat: 'Caso de Estudio Auditado',
-      description: 'Desglose del sistema utilizado por una promotora boutique para independizarse de los portales tradicionales.',
-      recommendedForNiches: ['Promotores de Obra Nueva', 'Inmobiliaria'],
+      category: 'E-commerce',
+      durationOrFormat: 'Caso real · Primer cliente de 4haus',
+      description: 'Cómo se diseñó y lanzó la web de AMOOO, una marca de ropa de Lima, adaptada a su marca y con un proceso claro de principio a fin.',
+      recommendedForNiches: ['Tiendas de ropa', 'E-commerce', 'Marcas locales'],
       isRealContent: true,
       keyTakeaways: [
-        'Creación de landing page específica por promoción con descarga de planos tras cualificación.',
-        'Tiempo de respuesta inferior a 60 segundos mediante asistente IA conectado a calendario.',
-        'Incremento del 34% en conversión de visita a reserva firme.'
+        'Partir de una estética que la clienta ya conocía y le gustaba, para que aprobara el diseño rápido.',
+        'Cargar los primeros productos para lanzar pronto; después la clienta sube los suyos desde su panel.',
+        'Testimonio de Melissa, dueña de AMOOO: "El lanzamiento de nuestra página web fue muy sencillo. El diseño se adapta a nuestra marca y el proceso fue claro de principio a fin."'
       ]
     },
     {
@@ -1151,7 +1152,8 @@ Devuelve ÚNICAMENTE un JSON válido con un array bajo la clave "prospects", don
     name: prospect.name,
     company: prospect.company || 'Empresa Particular',
     role: prospect.role || 'Decisor',
-    email: prospect.email || 'pendiente@ejemplo.com',
+    // Vacío si no hay correo: un correo "@ejemplo." haría que la limpieza de datos de ejemplo lo borrara.
+    email: prospect.email || '',
     socialHandle: prospect.socialHandle || '@contacto',
     channel: prospect.channel || 'Email',
     location: prospect.location || workspace.businessProfile?.targetLocation || 'Madrid',
@@ -1931,9 +1933,7 @@ Devuelve un JSON con:
     campaignOffer: `Oferta Grand Slam ($100M Offers) con Garantía Asimétrica`,
   };
 
-  if (applyToWorkspace !== false && !isPdfRequest && !isGreeting) {
-    syncExtractedDataToWorkspace(extractedProjectData);
-  }
+  // Sin IA no se modifican los datos que el usuario guardó (antes se sobrescribían con texto deducido).
 
   let fallbackResponse: any;
 
@@ -2080,45 +2080,23 @@ Devuelve un JSON con:
       openSpeakerGuideTab: false,
       updatedWorkspace: workspace,
     };
-  } else if (isStrategicQuestion) {
+  } else {
+    // Respuesta honesta cuando no hay IA disponible: no inventa cifras ni dice haber hecho cambios.
     fallbackResponse = {
-      reply: `Hola José. Analizando tu consulta para **${bp?.businessName || '4haus Studio'}** en **${detectedLocation}** bajo nuestro **Pilar 3 (Rigor y Honestidad Técnica)** y el modelo de **Alex Hormozi**, aquí tienes la explicación estratégica detallada para ti:\n\n1. **Por qué ganamos el mercado (Monopolio de Velocidad)**: El 95% de los competidores en ${detectedIndustry} tardan +4 horas en contestar. Con Daniel 1.0 filtrando en **45 segundos**, multiplicamos x8 la conversión a reunión.\n2. **Cómo funciona la matemática (12.4x LTV:CAC y 82% Margen)**: Invertimos el 55% en demanda directa, 25% en IA 24/7 y 20% en datos Off-Market, logrando recuperar el capital en **<35 días**.\n3. **Cómo blindas el cierre (Garantía Condicional)**: Si en 90 días no cumplimos el pipeline meta, operamos sin fee de gestión adicional hasta lograrlo.\n\nEstoy aquí para servirte. ¿Quieres abrir tu **Guía de Expositor** con el guion literal de estos 3 puntos?`,
-      questions: [
-        '¿Deseas descargar tu Guía Detallada del Expositor en PDF (3 páginas) o proyectar el Dashboard Visual?',
-      ],
-      quickReplies: [
-        'Abrir Guía Detallada del Expositor (Para José)',
-        'Descargar PDF de la Guía del Expositor (3 Páginas)',
-        'Abrir Dashboard Infográfico Visual (Inversionista)',
-      ],
-      proposalSummary: `Explicación Estratégica Detallada para José (${detectedIndustry} · ${detectedLocation})`,
+      reply:
+        'Ahora mismo no tengo conexión con la IA, así que no puedo darte una respuesta útil. ' +
+        'Inténtalo de nuevo en unos minutos. Mientras tanto puedes seguir con el paso: lo que escribas se guarda igual.',
+      questions: [],
+      quickReplies: [],
+      proposalSummary: '',
       recommendedModule: detectedRecommendedModule,
-      projectData: extractedProjectData,
-      presentationMode: 'speaker-script',
+      projectData: undefined,
+      presentationMode: 'none',
       downloadPdfDossier: false,
       openInfographicDashboard: false,
-      openSpeakerGuideTab: true,
+      openSpeakerGuideTab: false,
       updatedWorkspace: workspace,
-    };
-  } else {
-    fallbackResponse = {
-      reply: `Perfecto, José. He aplicado tu indicación (**"${lastUserMsg}"**) directamente en **${bp?.businessName || '4haus Studio'}** (${detectedIndustry} · ${detectedLocation} · Ticket: ${detectedTicket}).\n\nAdemás, actualicé tanto tu **🎙️ Guía Detallada del Expositor** (con el nuevo guion y argumentos para ti) como el **📊 Dashboard Infográfico** (para el inversionista). Estoy aquí para servirte, ¿cuál de los dos deseas revisar?`,
-      questions: [
-        '¿Quieres ver cómo quedó tu Guion de Expositor actualizado o prefieres ver el Dashboard Visual?',
-      ],
-      quickReplies: [
-        'Abrir Guía Detallada del Expositor (Para José)',
-        'Abrir Dashboard Infográfico Visual (Inversionista)',
-        'Descargar PDF de la Guía del Expositor (3 Páginas)',
-      ],
-      proposalSummary: `Estrategia, Guía del Expositor y Dashboard actualizados: ${lastUserMsg.slice(0, 60)}`,
-      recommendedModule: detectedRecommendedModule,
-      projectData: extractedProjectData,
-      presentationMode: isSpeakerOrExplanatoryForJose ? 'speaker-script' : 'infographic-dashboard',
-      downloadPdfDossier: isPdfRequest,
-      openInfographicDashboard: false,
-      openSpeakerGuideTab: isSpeakerOrExplanatoryForJose,
-      updatedWorkspace: workspace,
+      aiUnavailable: true,
     };
   }
 

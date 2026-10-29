@@ -34,6 +34,7 @@ import {
   DANIEL_FISH_AUDIO_TRANSCRIPT,
   DANIEL_MALE_VOICE_PRESETS,
 } from '../utils/danielVoiceEngine';
+import { getWorkspaceId } from '../utils/workspaceId';
 import { generateAndDownloadStrategyDossierPdf } from '../utils/dossierPdfGenerator';
 import {
   DANIEL_MORAL_PILLARS,
@@ -116,6 +117,7 @@ export function DanielFloatingWidget({
 
   const recognitionRef = useRef<any>(null);
   const fishFileInputRef = useRef<HTMLInputElement | null>(null);
+  const handleSendInstructionRef = useRef<((text?: string) => void) | null>(null);
 
   useEffect(() => {
     const unsubscribe = danielVoice.subscribe((state) => {
@@ -127,6 +129,19 @@ export function DanielFloatingWidget({
       setAlwaysMasterMp3(state.alwaysUseMasterMp3);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Cualquier pantalla puede pedirle algo a Daniel con:
+  // window.dispatchEvent(new CustomEvent('daniel:ask', { detail: { text: '...' } }))
+  // El widget se abre y envía la pregunta.
+  useEffect(() => {
+    const onAsk = (event: Event) => {
+      const text = (event as CustomEvent<{ text?: string }>).detail?.text;
+      setIsExpanded(true);
+      if (text) handleSendInstructionRef.current?.(text);
+    };
+    window.addEventListener('daniel:ask', onAsk);
+    return () => window.removeEventListener('daniel:ask', onAsk);
   }, []);
 
   const sectionLabels: Record<string, string> = {
@@ -460,7 +475,7 @@ export function DanielFloatingWidget({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(userId ? { 'x-user-id': userId } : {}),
+          'x-user-id': getWorkspaceId(userId),
         },
         body: JSON.stringify({
           messages: updatedMessages,
@@ -468,7 +483,7 @@ export function DanielFloatingWidget({
           currentSection: `${activeSection} (${activeGrowthStep})`,
           engineModel: 'Daniel 1.0 · Copiloto Personal de José',
           applyToWorkspace: true,
-          userId: userId || 'default',
+          userId: getWorkspaceId(userId),
         }),
       });
 
@@ -495,10 +510,8 @@ export function DanielFloatingWidget({
           danielVoice.speak(data.reply, lang === 'en' ? 'en' : 'es');
         }
 
-        const isSpeakerMode =
-          wantsSpeakerGuide ||
-          Boolean(data.openSpeakerGuideTab) ||
-          data.presentationMode === 'speaker-script';
+        // Solo se abre la guía si el usuario la pidió o el servidor lo indica de forma explícita.
+        const isSpeakerMode = wantsSpeakerGuide || Boolean(data.openSpeakerGuideTab);
 
         if (isSpeakerMode) {
           setInfographicInitialTab('speaker_guide');
@@ -569,6 +582,9 @@ export function DanielFloatingWidget({
       setIsThinking(false);
     }
   };
+
+  // Referencia siempre actualizada para el evento 'daniel:ask'
+  handleSendInstructionRef.current = handleSendInstruction;
 
   const contextualPrompts =
     lang === 'en'

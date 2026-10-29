@@ -33,6 +33,10 @@ import { LeadNichoEngine, GrowthStepId } from './LeadNichoEngine';
 import { ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { UserDashboard } from './UserDashboard';
 import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
+import { CaptarClientesFlow } from './CaptarClientesFlow';
+
+// Identificadores de "Captar clientes" (los antiguos siguen funcionando para Daniel y otros botones)
+const GROWTH_IDS = ['growth-os', 'negocio-perfil', 'prospectos-crm', 'campanas-ia', 'landings-brief', 'conexiones-api'];
 import type { User } from 'firebase/auth';
 
 interface HomeWorkbenchProps {
@@ -109,6 +113,11 @@ export function HomeWorkbench({
   const [localPreloadData, setLocalPreloadData] = useState<ProjectPreloadPayload | null>(null);
   // Prompt de la plantilla elegida en el inicio; se carga en la casilla principal.
   const [templatePrompt, setTemplatePrompt] = useState<string | null>(null);
+  // "Captar clientes": paso a paso por defecto; la vista avanzada (LeadNicho completo) a un clic.
+  const [showAdvancedGrowth, setShowAdvancedGrowth] = useState(false);
+  useEffect(() => {
+    if (!GROWTH_IDS.includes(activeSidebarItem)) setShowAdvancedGrowth(false);
+  }, [activeSidebarItem]);
 
   const growthStep = externalGrowthStep !== undefined ? externalGrowthStep : localGrowthStep;
   const setGrowthStep = (step: GrowthStepId) => {
@@ -308,6 +317,7 @@ export function HomeWorkbench({
                 type="button"
                 onClick={() => {
                   setGrowthStep('paso5-landing');
+                  setShowAdvancedGrowth(true);
                   onSelectSidebarItem('growth-os');
                 }}
                 className={`self-start sm:self-auto px-4 py-2 rounded-full border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
@@ -456,6 +466,7 @@ export function HomeWorkbench({
                     : 'Playbooks y plantillas de mensajes para conseguir clientes.',
                   action: () => {
                     setGrowthStep('paso6-recursos');
+                    setShowAdvancedGrowth(true);
                     onSelectSidebarItem('growth-os');
                   },
                 },
@@ -526,15 +537,32 @@ export function HomeWorkbench({
           </div>
         )}
 
-        {/* VIEW 9: CRECIMIENTO & CAPTACIÓN POR NICHO (LeadNicho 7-Step OS inside 4haus Studio) */}
-        {[
-          'growth-os',
-          'negocio-perfil',
-          'prospectos-crm',
-          'campanas-ia',
-          'landings-brief',
-          'conexiones-api',
-        ].includes(activeSidebarItem) && (
+        {/* VIEW 9a: CAPTAR CLIENTES · paso a paso guiado por Daniel (vista por defecto) */}
+        {activeSidebarItem === 'growth-os' && !showAdvancedGrowth && (
+          <CaptarClientesFlow
+            lang={lang}
+            themeMode={themeMode}
+            userId={userId}
+            preloadData={preloadData}
+            onOpenAdvanced={() => setShowAdvancedGrowth(true)}
+          />
+        )}
+
+        {/* VIEW 9b: CAPTAR CLIENTES · vista avanzada (LeadNicho completo) */}
+        {GROWTH_IDS.includes(activeSidebarItem) && (showAdvancedGrowth || activeSidebarItem !== 'growth-os') && (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdvancedGrowth(false);
+                setGrowthStep('dashboard');
+                onSelectSidebarItem('growth-os');
+              }}
+              className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${isDark ? 'text-white' : 'text-zinc-900'} hover:underline`}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              {lang === 'en' ? 'Back to step by step' : 'Volver al paso a paso'}
+            </button>
           <LeadNichoEngine
             lang={lang}
             themeMode={themeMode}
@@ -560,6 +588,7 @@ export function HomeWorkbench({
             onOpenBooksModal={onOpenBooksModal}
             onOpenLivePreview={onOpenLivePreview}
           />
+          </div>
         )}
 
       </div>
