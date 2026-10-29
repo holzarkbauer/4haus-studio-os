@@ -5,6 +5,7 @@ import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import dotenv from 'dotenv';
+import { registerDanielRoutes } from './server/daniel.ts';
 
 dotenv.config();
 
@@ -2343,6 +2344,9 @@ Coordina tus departamentos especializados y devuelve un JSON estructurado con:
 
   return res.json({ success: true, dispatchResult: fallbackDispatch });
 });
+
+// Daniel: resumen corto + entregables, con tope de gasto diario (server/daniel.ts)
+registerDanielRoutes(app, (userId) => readWorkspace(userId));
 
 // Start Server with Vite Middleware in Development or Static in Production
 async function startServer() {

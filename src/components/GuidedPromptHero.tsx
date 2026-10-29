@@ -35,6 +35,7 @@ import {
   InfographicModalTab,
 } from './InvestorInfographicModal';
 import { WhaleLogo } from './WhaleLogo';
+import { askDaniel } from './GuidedFlow';
 
 type CreateCategoryId = 'web' | 'app' | 'agent' | 'image' | 'video' | 'voice';
 
@@ -206,6 +207,13 @@ export function GuidedPromptHero({
     ) {
       setInfographicInitialTab('overview');
       setIsInfographicOpen(true);
+      setPromptInput('');
+      return;
+    }
+
+    // La casilla del inicio envía a Daniel: responde en su panel con entregables (estilo Claude).
+    if (!overrideText) {
+      askDaniel(`${activeCategoryObj.label}: ${textToSend}`);
       setPromptInput('');
       return;
     }

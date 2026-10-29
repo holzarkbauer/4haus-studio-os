@@ -23,7 +23,7 @@ import { AboutModal, AboutSubModalType } from './components/AboutModal';
 // OS Studio Layout Components
 import { AppSidebar } from './components/AppSidebar';
 import { AppTopBar } from './components/AppTopBar';
-import { DanielFloatingWidget } from './components/DanielFloatingWidget';
+import { DanielPanel } from './components/DanielPanel';
 import { HomeWorkbench } from './components/HomeWorkbench';
 import { GuidedMessage } from './components/GuidedPromptHero';
 import { GrowthStepId } from './components/LeadNichoEngine';
@@ -361,24 +361,11 @@ export default function App() {
               </div>
 
               {/* Bottom Right: Unified Daniel 1.0 + Growth & Niche Strategy Co-Pilot available across all sections */}
-              <DanielFloatingWidget
+              <DanielPanel
                 lang={lang}
+                themeMode={topBarThemeMode}
                 activeSection={activeSidebarItem}
-                activeGrowthStep={growthStep}
                 userId={currentUser?.uid || null}
-                messages={guidedMessages}
-                onUpdateMessages={setGuidedMessages}
-                onApplyStrategyChanges={(incomingPreload, targetSidebarItem, targetGrowthStep) => {
-                  setPreloadData((prev) => ({ ...(prev || {}), ...incomingPreload }));
-                  if (targetGrowthStep) {
-                    setGrowthStep(targetGrowthStep);
-                  }
-                  if (targetSidebarItem) {
-                    setActiveSidebarItem(targetSidebarItem);
-                  }
-                }}
-                onOpenFullModal={() => setIsDanielOpen(true)}
-                onOpenSpotify={() => setIsSpotifyOpen(true)}
               />
             </div>
           </main>
