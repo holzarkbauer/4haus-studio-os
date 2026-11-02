@@ -2,11 +2,12 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import dotenv from 'dotenv';
 import { registerDanielRoutes } from './server/daniel.ts';
 import { registerAuth } from './server/auth.ts';
+import { claudeJsonClient } from './server/claudeJson.ts';
 import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
@@ -712,20 +713,11 @@ function writeWorkspace(data: any, userId?: string | null) {
   persistWorkspace(userId, data);
 }
 
-// Initialize Gemini Server-Side SDK with required telemetry header
+// Cliente de IA para las rutas que piden JSON. Ahora es Claude (Haiku) con la misma forma que
+// tenía el cliente de Gemini, así que las rutas no cambian. Sin ANTHROPIC_API_KEY devuelve null
+// y cada ruta usa su respuesta de respaldo honesta.
 function getGenAIClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
+  return process.env.ANTHROPIC_API_KEY ? claudeJsonClient : null;
 }
 
 // ============================================================================

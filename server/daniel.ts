@@ -45,7 +45,7 @@ const PRICES: Record<string, { input: number; output: number }> = {
   'claude-sonnet-5-5': { input: 2, output: 10 },
   'gemini-3.8-flash': { input: 0.75, output: 3.75 },
 };
-const CLAUDE_WEB_SEARCH_USD = 10 / 1000;
+export const CLAUDE_WEB_SEARCH_USD = 10 / 1000;
 const GEMINI_SEARCH_USD = 14 / 1000; // tras las búsquedas gratuitas del mes; se cuenta igual por prudencia
 
 const DAILY_BUDGET_USD = Number(process.env.DANIEL_DAILY_BUDGET_USD || 5);
@@ -88,6 +88,19 @@ function saveUsage() {
   });
 }
 
+// Tope compartido: las demás funciones de IA de la app (cliente ideal, mensajes, etc.) también
+// cuentan contra el mismo gasto diario que Daniel.
+export async function aiBudgetAvailable(): Promise<boolean> {
+  await ensureUsageLoaded();
+  return usage.spentUsd < DAILY_BUDGET_USD;
+}
+
+export function recordAiSpend(costUsd: number, label: string) {
+  usage.spentUsd += costUsd;
+  saveUsage();
+  console.log(`[ia] ${usage.day} ${label} costo=${costUsd.toFixed(4)} USD total_dia=${usage.spentUsd.toFixed(4)} USD`);
+}
+
 function resetIfNewDay() {
   const today = new Date().toISOString().slice(0, 10);
   if (usage.day !== today) {
@@ -97,7 +110,7 @@ function resetIfNewDay() {
   }
 }
 
-function priceFor(model: string, inputTokens: number, outputTokens: number) {
+export function priceFor(model: string, inputTokens: number, outputTokens: number) {
   const p = PRICES[model];
   if (!p) return 0;
   return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;

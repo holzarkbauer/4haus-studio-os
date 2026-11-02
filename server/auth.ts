@@ -86,7 +86,11 @@ export function registerAuth(app: Express, onVerified?: (workspaceId: string) =>
     }
 
     const fullPath = `${req.baseUrl}${req.path}`;
-    if (!info.verified && isPaidRoute(fullPath)) {
+    // Buscar prospectos con IA también gasta (búsqueda web), aunque añadir uno a mano no.
+    const action = req.body && typeof req.body === 'object' ? String((req.body as any).action || '') : '';
+    const paidProspects =
+      fullPath === '/api/studio/prospects' && ['search_real_prospects', 'generate_demo_batch'].includes(action);
+    if (!info.verified && (isPaidRoute(fullPath) || paidProspects)) {
       return deny(res, 401, 'Inicia sesión con Google para usar la IA. Incluye 8000 créditos gratis.');
     }
 

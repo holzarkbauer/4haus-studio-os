@@ -17,8 +17,6 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
       - key: ADMIN_UIDS
         sync: false
       - key: FISH_AUDIO_API_KEY
