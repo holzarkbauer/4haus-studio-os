@@ -16,6 +16,24 @@ import { Language } from '../types';
 import { ui } from '../ui/tokens';
 import { askDaniel } from './GuidedFlow';
 import { HOME_TEMPLATES } from './HomeTemplatesShowcase';
+import { PackagesModal } from './PackagesModal';
+import { getWorkspaceId } from '../utils/workspaceId';
+
+const GUEST_SITES_KEY = '4haus_guest_sites';
+function readGuestSites(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_SITES_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+function rememberGuestSite(id: string) {
+  try {
+    localStorage.setItem(GUEST_SITES_KEY, JSON.stringify(Array.from(new Set([id, ...readGuestSites()])).slice(0, 5)));
+  } catch {
+    /* sin almacenamiento: no es grave */
+  }
+}
 
 // Creador de webs: describe → Daniel diseña la maqueta con portada 3D → cambios → descarga.
 // La vista previa corre en un iframe aislado (sin acceso a la app ni a la sesión).
@@ -34,6 +52,7 @@ interface SiteView {
   error?: string;
   changes: SiteChange[];
   paid: boolean;
+  sample?: boolean;
   canUndo: boolean;
   previewHtml: string;
   updatedAt: string;
@@ -76,6 +95,10 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showPackages, setShowPackages] = useState(false);
+  // Solo para administradores: solicitudes de llamada que dejaron las empresas.
+  const [leads, setLeads] = useState<any[] | null>(null);
+  const guest = !userId;
   const pollRef = useRef<number | null>(null);
 
   const working = site && (site.status === 'generating' || site.status === 'editing');
@@ -87,7 +110,6 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   }
 
   const loadList = useCallback(async () => {
-    if (!userId) return;
     try {
       const res = await fetch('/api/studio/sites');
       if (!res.ok) return;
@@ -103,6 +125,14 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (!userId) return setLeads(null);
+    fetch('/api/studio/admin/leads')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLeads(d?.leads || null))
+      .catch(() => setLeads(null));
+  }, [userId]);
 
   // Consulta el estado mientras Daniel trabaja.
   useEffect(() => {
@@ -137,9 +167,14 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brief: clean }),
       });
-      if (!res.ok) throw new Error(await readError(res, t('No pude empezar tu web.', 'Could not start your website.')));
+      if (!res.ok) {
+        const msg = await readError(res, t('No pude empezar tu web.', 'Could not start your website.'));
+        if (res.status === 403 || res.status === 429) setShowPackages(!userId);
+        throw new Error(msg);
+      }
       const data = await res.json();
       setSite(data.site);
+      if (!userId && data.site?.id) rememberGuestSite(data.site.id);
       setBrief('');
       loadList();
     } catch (e) {
@@ -152,11 +187,34 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   // Si llega un pedido desde el inicio o una plantilla, se arranca solo (con sesión).
   useEffect(() => {
     if (!startBrief) return;
-    if (userId) create(startBrief);
-    else setBrief(startBrief);
+    create(startBrief);
     onStartConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startBrief, userId]);
+
+  // Al registrarse, la maqueta hecha como visitante pasa a la cuenta.
+  useEffect(() => {
+    if (!userId) return;
+    const ids = readGuestSites();
+    if (!ids.length) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/studio/sites/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ anonId: getWorkspaceId(null), siteIds: ids }),
+        });
+        if (res.ok) {
+          localStorage.removeItem(GUEST_SITES_KEY);
+          loadList();
+          if (site) openSite(site.id);
+        }
+      } catch {
+        /* se reintenta en el próximo inicio de sesión */
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   async function openSite(id: string) {
     setError(null);
@@ -168,6 +226,10 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
 
   async function sendEdit() {
     if (!site || !instruction.trim() || busy) return;
+    if (guest) {
+      setShowPackages(true);
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -198,9 +260,13 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   async function download() {
     if (!site) return;
     setError(null);
+    if (guest) {
+      setShowPackages(true);
+      return;
+    }
     const res = await fetch(`/api/studio/sites/${site.id}/download`);
     if (res.status === 402) {
-      setNotice(await readError(res, t('La descarga estará disponible pronto.', 'Download will be available soon.')));
+      setShowPackages(true);
       return;
     }
     if (!res.ok) {
@@ -253,27 +319,6 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
     </div>
   );
 
-  // ------------------------------------------------------------ sin sesión
-  if (!userId) {
-    return (
-      <div className="max-w-2xl mx-auto py-16 text-center space-y-4">
-        <Globe className={`w-8 h-8 mx-auto ${s.faint}`} />
-        <h2 className={s.title}>{t('Crea tu web con Daniel', 'Create your website with Daniel')}</h2>
-        <p className={s.muted}>
-          {t(
-            'Describe tu negocio y Daniel diseña una maqueta con portada 3D que puedes ver en vivo. Inicia sesión para empezar: incluye 8000 créditos gratis.',
-            'Describe your business and Daniel designs a mockup with a 3D hero you can preview live. Sign in to start: 8000 free credits included.'
-          )}
-        </p>
-        {brief && <p className={`text-sm italic ${s.faint}`}>“{brief.slice(0, 140)}{brief.length > 140 ? '…' : ''}”</p>}
-        <button type="button" onClick={onGoogleLogin} disabled={isLoggingIn} className={s.primaryButton}>
-          {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {t('Iniciar sesión con Google', 'Sign in with Google')}
-        </button>
-      </div>
-    );
-  }
-
   // ------------------------------------------------------------ paso 1: describir
   if (!site) {
     return (
@@ -312,7 +357,11 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className={`text-xs ${s.faint}`}>
-              {limits ? t(`Te quedan ${limits.generationsLeft} webs nuevas hoy`, `${limits.generationsLeft} new websites left today`) : ''}
+              {guest
+                ? t('Tu primera maqueta es gratis, sin registro.', 'Your first mockup is free, no sign-up.')
+                : limits
+                ? t(`Te quedan ${limits.generationsLeft} webs nuevas hoy`, `${limits.generationsLeft} new websites left today`)
+                : ''}
             </span>
             <button type="button" onClick={() => create(brief)} disabled={busy || brief.trim().length < 15 || !aiReady} className={s.primaryButton}>
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -358,9 +407,36 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           </div>
         )}
 
+        {leads && (
+          <div className="space-y-3">
+            <h3 className={s.heading}>{t(`Solicitudes de llamada (${leads.length})`, `Call requests (${leads.length})`)}</h3>
+            <p className={`text-xs ${s.faint}`}>{t('Solo tú lo ves, como administrador.', 'Only you see this, as an admin.')}</p>
+            <div className={`${s.card} divide-y ${isDark ? 'divide-white/10' : 'divide-black/[0.06]'}`}>
+              {leads.length === 0 && <p className={`px-4 py-3 text-sm ${s.muted}`}>{t('Aún no hay solicitudes.', 'No requests yet.')}</p>}
+              {leads.map((l) => (
+                <div key={l.id} className="px-4 py-3 text-sm">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <span className={`font-medium ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>
+                      {l.name}
+                      {l.business ? ` · ${l.business}` : ''}
+                    </span>
+                    <span className={`text-xs ${s.faint}`}>{new Date(l.createdAt).toLocaleString(isEn ? 'en-US' : 'es-PE')}</span>
+                  </div>
+                  <p className={`text-xs mt-0.5 ${s.muted}`}>
+                    {l.contact} · {l.packageId}
+                    {l.upgrades?.length ? ` + ${l.upgrades.join(', ')}` : ''}
+                  </p>
+                  {l.message && <p className={`text-xs mt-1 ${s.muted}`}>“{l.message}”</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button type="button" onClick={() => askDaniel(t('¿Cómo describo bien mi web para que quede profesional?', 'How do I describe my website so it looks professional?'))} className={s.ghostButton}>
           {t('Pedirle ayuda a Daniel', 'Ask Daniel for help')}
         </button>
+      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? onGoogleLogin : undefined} />
       </div>
     );
   }
@@ -387,7 +463,12 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           {site.status === 'editing' && <p className={s.muted}>{t('Aplicando tu cambio…', 'Applying your change…')}</p>}
           {site.status === 'error' && <p className="text-red-600">{site.error}</p>}
           {site.status === 'ready' && site.error && <p className="text-amber-700">{site.error}</p>}
-          {site.status === 'ready' && !site.changes.length && (
+          {site.status === 'ready' && guest && (
+            <p className={s.muted}>
+              {t('Esta es tu maqueta de muestra: portada 3D y las secciones principales. La versión completa se termina contigo en la llamada.', 'This is your sample mockup: 3D hero and the main sections. The full version is finished with you on the call.')}
+            </p>
+          )}
+          {site.status === 'ready' && !guest && !site.changes.length && (
             <p className={s.muted}>
               {t('Tu maqueta está lista. Pide cambios en lenguaje normal: “cambia el color a verde oliva”, “agrega una sección de precios”.', 'Your mockup is ready. Ask for changes in plain words: “make it olive green”, “add a pricing section”.')}
             </p>
@@ -401,7 +482,20 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
         </div>
 
         <div className={`p-4 border-t ${s.divider} space-y-2`}>
-          {site.status === 'error' ? (
+          {guest && site.status === 'ready' ? (
+            <div className="space-y-2">
+              <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{t('¿Te gusta tu web?', 'Like your website?')}</p>
+              <p className={`text-xs ${s.muted}`}>
+                {t('Esta es una muestra. Agenda una llamada para completarla y publicarla en tu dominio (desde 500 USD).', 'This is a sample. Book a call to complete it and publish it on your domain (from $500).')}
+              </p>
+              <button type="button" onClick={() => setShowPackages(true)} className={`${s.primaryButton} w-full`}>
+                {t('Ver paquetes y agendar llamada', 'See packages and book a call')}
+              </button>
+              <button type="button" onClick={onGoogleLogin} disabled={isLoggingIn} className={`${s.secondaryButton} w-full justify-center`}>
+                {t('Soy creador: registrarme', 'I am a creator: sign up')}
+              </button>
+            </div>
+          ) : site.status === 'error' ? (
             <button type="button" onClick={() => create(site.brief)} disabled={busy} className={`${s.primaryButton} w-full`}>
               {t('Intentar de nuevo', 'Try again')}
             </button>
@@ -456,7 +550,7 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
               <ExternalLink className="w-3.5 h-3.5" /> {t('Abrir', 'Open')}
             </button>
             <button type="button" onClick={download} disabled={!site.previewHtml || Boolean(working)} className={s.primaryButton}>
-              <Download className="w-4 h-4" /> {t('Descargar · desde 27 USD', 'Download · from $27')}
+              <Download className="w-4 h-4" /> {guest ? t('Quiero esta web', 'I want this website') : t('Descargar', 'Download')}
             </button>
           </div>
         </div>
@@ -481,6 +575,7 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           )}
         </div>
       </section>
+      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? onGoogleLogin : undefined} />
     </div>
   );
 }

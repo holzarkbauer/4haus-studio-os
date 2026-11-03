@@ -20,6 +20,10 @@ const SITES_DIR = path.resolve(process.cwd(), 'data', 'sites');
 const DAILY_GENERATIONS = Number(process.env.SITES_DAILY_GENERATIONS || 3);
 const DAILY_EDITS = Number(process.env.SITES_DAILY_EDITS || 20);
 const MAX_SITES_PER_USER = 20;
+// Visitantes sin registro: 1 maqueta de muestra por navegador, con frenos contra abuso.
+const ANON_DAILY_BUDGET_USD = Number(process.env.ANON_DAILY_BUDGET_USD || 3);
+const ANON_PER_IP_DAILY = Number(process.env.ANON_PER_IP_DAILY || 2);
+const ANON_ID = /^anon_[a-z0-9]{6,40}$/i;
 
 if (!fs.existsSync(SITES_DIR)) fs.mkdirSync(SITES_DIR, { recursive: true });
 
@@ -40,6 +44,8 @@ export interface Site {
   previousHtml?: string;
   changes: SiteChange[];
   paid: boolean;
+  /** Maqueta de muestra de un visitante sin registro (más corta). */
+  sample?: boolean;
   costUsd: number;
   createdAt: string;
   updatedAt: string;
@@ -122,6 +128,27 @@ async function usageFor(uid: string) {
 
 function saveUsage() {
   saveServerDoc(`siteUsage-${usage.day}`, { per: usage.per, updatedAt: new Date().toISOString() });
+}
+
+// Gasto y conteo de visitantes sin registro (global y por dirección IP).
+const anon = { day: '', loaded: false, spentUsd: 0, perIp: {} as Record<string, number> };
+
+async function anonState() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (anon.day !== today) Object.assign(anon, { day: today, loaded: false, spentUsd: 0, perIp: {} });
+  if (!anon.loaded) {
+    const saved = await loadServerDoc<{ spentUsd?: number; perIp?: Record<string, number> }>(`anonSites-${today}`);
+    if (saved) {
+      anon.spentUsd = Math.max(anon.spentUsd, Number(saved.spentUsd) || 0);
+      anon.perIp = { ...(saved.perIp || {}), ...anon.perIp };
+    }
+    anon.loaded = true;
+  }
+  return anon;
+}
+
+function saveAnon() {
+  saveServerDoc(`anonSites-${anon.day}`, { spentUsd: anon.spentUsd, perIp: anon.perIp, updatedAt: new Date().toISOString() });
 }
 
 // ---------------------------------------------------------------- Claude
@@ -289,8 +316,17 @@ export function withWatermark(html: string): string {
 // ---------------------------------------------------------------- trabajos en segundo plano
 async function runGeneration(site: Site, io: WorkspaceIO) {
   try {
-    const out = await claudeStream(SYSTEM, `Crea esta web:\n${site.brief}`, 20000);
-    recordAiSpend(out.costUsd, `web-generar ${site.id}`);
+    // La muestra gratis es más corta (portada 3D + 3 secciones): cuesta la mitad.
+    const ask = site.sample
+      ? `Crea esta web en VERSIÓN DE MUESTRA: solo la portada 3D, 3 secciones clave y el pie de página, con el mismo nivel de diseño.\n${site.brief}`
+      : `Crea esta web:\n${site.brief}`;
+    const out = await claudeStream(SYSTEM, ask, site.sample ? 10000 : 20000);
+    recordAiSpend(out.costUsd, `web-generar${site.sample ? '-muestra' : ''} ${site.id}`);
+    if (site.sample) {
+      const a = await anonState();
+      a.spentUsd += out.costUsd;
+      saveAnon();
+    }
     site.costUsd += out.costUsd;
     const parsed = extractSite(out.text);
     if (!parsed) throw new Error(out.stopReason === 'max_tokens' ? 'La web salió demasiado larga y quedó incompleta.' : 'La respuesta no trajo una web completa.');
@@ -302,9 +338,11 @@ async function runGeneration(site: Site, io: WorkspaceIO) {
     console.error('[sites] Error al generar:', (err as Error).message);
     site.status = 'error';
     site.error = 'No pude terminar tu web esta vez. Inténtalo de nuevo; no se descontó tu cupo.';
-    const u = await usageFor(site.ownerId);
-    u.gen = Math.max(0, u.gen - 1);
-    saveUsage();
+    if (!site.sample) {
+      const u = await usageFor(site.ownerId);
+      u.gen = Math.max(0, u.gen - 1);
+      saveUsage();
+    }
   }
   saveSite(site, io);
 }
@@ -360,6 +398,7 @@ function publicView(site: Site) {
     error: site.error,
     changes: site.changes,
     paid: site.paid,
+    sample: Boolean(site.sample),
     canUndo: Boolean(site.previousHtml),
     createdAt: site.createdAt,
     updatedAt: site.updatedAt,
@@ -368,18 +407,52 @@ function publicView(site: Site) {
 }
 
 export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
-  // Todas estas rutas exigen sesión verificada (ver server/auth.ts).
-  const ownerOf = (req: Request) => req.auth?.uid || '';
+  // Con sesión: el UID verificado. Sin sesión: el espacio anónimo del navegador (anon_xxxx).
+  const ownerOf = (req: Request) => req.auth?.workspaceId || '';
+  const isGuest = (req: Request) => !req.auth?.verified;
+  const needAccount = (res: Response) =>
+    res.status(401).json({ error: 'Regístrate para seguir editando o descargar tu web.', authRequired: true });
 
   app.get('/api/studio/sites', async (req: Request, res: Response) => {
     const uid = ownerOf(req);
     const ws = io.read(uid);
+    const sites = Array.isArray(ws.sites) ? ws.sites : [];
+    const guest = isGuest(req);
     const u = await usageFor(uid);
     res.json({
-      sites: Array.isArray(ws.sites) ? ws.sites : [],
-      limits: { generationsLeft: Math.max(0, DAILY_GENERATIONS - u.gen), editsLeft: Math.max(0, DAILY_EDITS - u.edit) },
+      sites,
+      guest,
+      limits: guest
+        ? { generationsLeft: sites.length ? 0 : 1, editsLeft: 0 }
+        : { generationsLeft: Math.max(0, DAILY_GENERATIONS - u.gen), editsLeft: Math.max(0, DAILY_EDITS - u.edit) },
       aiReady: Boolean(process.env.ANTHROPIC_API_KEY),
     });
+  });
+
+  // Al registrarse, la maqueta hecha como visitante pasa a su cuenta.
+  app.post('/api/studio/sites/claim', async (req: Request, res: Response) => {
+    if (isGuest(req)) return needAccount(res);
+    const uid = ownerOf(req);
+    const anonId = String(req.body?.anonId || '');
+    if (!ANON_ID.test(anonId)) return res.status(400).json({ error: 'Identificador no válido.' });
+    const guestWs = io.read(anonId);
+    const entries: any[] = Array.isArray(guestWs.sites) ? guestWs.sites : [];
+    // El navegador también envía los ids de sus maquetas, por si el servidor se reinició y
+    // perdió el índice del visitante (cada una se comprueba: debe pertenecer a ese anon_xxxx).
+    const ids = new Set<string>(entries.map((e) => String(e.id)));
+    for (const id of Array.isArray(req.body?.siteIds) ? req.body.siteIds.slice(0, 5) : []) ids.add(String(id));
+    let moved = 0;
+    for (const id of ids) {
+      const site = await loadSite(id);
+      if (site && site.ownerId === anonId) {
+        site.ownerId = uid;
+        saveSite(site, io);
+        moved += 1;
+      }
+    }
+    guestWs.sites = [];
+    io.write(guestWs, anonId);
+    res.json({ moved });
   });
 
   app.post('/api/studio/sites', async (req: Request, res: Response) => {
@@ -388,10 +461,25 @@ export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
     if (brief.length < 15) return res.status(400).json({ error: 'Cuéntame un poco más de tu web (qué negocio es y qué quieres mostrar).' });
     if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'El creador de webs aún no tiene conectada la IA. Vuelve a intentarlo pronto.' });
     if (!(await aiBudgetAvailable())) return res.status(429).json({ error: 'Hoy se alcanzó el límite de uso de IA de la plataforma. Vuelve mañana.' });
-    const u = await usageFor(uid);
-    if (u.gen >= DAILY_GENERATIONS) return res.status(429).json({ error: `Ya creaste ${DAILY_GENERATIONS} webs hoy. Puedes seguir ajustando las que tienes o volver mañana.` });
-    u.gen += 1;
-    saveUsage();
+    const guest = isGuest(req);
+    if (guest) {
+      const ws = io.read(uid);
+      if (Array.isArray(ws.sites) && ws.sites.length > 0) {
+        return res.status(403).json({ error: 'Ya creaste tu maqueta gratis. Agenda una llamada o regístrate para seguir.', guestLimit: true });
+      }
+      const a = await anonState();
+      const ip = String(req.ip || 'sin-ip');
+      if ((a.perIp[ip] || 0) >= ANON_PER_IP_DAILY || a.spentUsd >= ANON_DAILY_BUDGET_USD) {
+        return res.status(429).json({ error: 'Hoy ya no quedan maquetas gratis. Regístrate o vuelve mañana.', guestLimit: true });
+      }
+      a.perIp[ip] = (a.perIp[ip] || 0) + 1;
+      saveAnon();
+    } else {
+      const u = await usageFor(uid);
+      if (u.gen >= DAILY_GENERATIONS) return res.status(429).json({ error: `Ya creaste ${DAILY_GENERATIONS} webs hoy. Puedes seguir ajustando las que tienes o volver mañana.` });
+      u.gen += 1;
+      saveUsage();
+    }
 
     const now = new Date().toISOString();
     const site: Site = {
@@ -403,6 +491,7 @@ export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
       html: '',
       changes: [],
       paid: false,
+      sample: guest,
       costUsd: 0,
       createdAt: now,
       updatedAt: now,
@@ -419,6 +508,7 @@ export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
   });
 
   app.post('/api/studio/sites/:id/edit', async (req: Request, res: Response) => {
+    if (isGuest(req)) return needAccount(res);
     const uid = ownerOf(req);
     const site = await loadSite(String(req.params.id));
     if (!site || site.ownerId !== uid) return res.status(404).json({ error: 'No encontré esa web.' });
@@ -438,6 +528,7 @@ export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
   });
 
   app.post('/api/studio/sites/:id/undo', async (req: Request, res: Response) => {
+    if (isGuest(req)) return needAccount(res);
     const site = await loadSite(String(req.params.id));
     if (!site || site.ownerId !== ownerOf(req)) return res.status(404).json({ error: 'No encontré esa web.' });
     if (site.status !== 'ready' || !site.previousHtml) return res.status(409).json({ error: 'No hay un cambio para deshacer.' });
@@ -449,6 +540,7 @@ export function registerSiteRoutes(app: Express, io: WorkspaceIO) {
   });
 
   app.get('/api/studio/sites/:id/download', async (req: Request, res: Response) => {
+    if (isGuest(req)) return needAccount(res);
     const uid = ownerOf(req);
     const site = await loadSite(String(req.params.id));
     if (!site || site.ownerId !== uid) return res.status(404).json({ error: 'No encontré esa web.' });

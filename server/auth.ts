@@ -24,7 +24,6 @@ const PAID_ROUTES = [
   '/api/studio/landing-drafts',
   '/api/studio/guided-builder',
   '/api/studio/super-agent-dispatch',
-  '/api/studio/sites',
 ];
 
 function adminAuth() {

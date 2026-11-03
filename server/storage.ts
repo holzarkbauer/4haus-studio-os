@@ -109,3 +109,24 @@ export function saveJsonDoc(collection: string, id: string, value: unknown, owne
     .set({ json, ownerId, updatedAt: new Date().toISOString() })
     .catch((err) => console.error('[storage] No se pudo guardar en Firestore:', (err as Error).message));
 }
+
+/** Lista los documentos más recientes de una colección (para paneles de administración). */
+export async function listJsonDocs<T>(collection: string, limit = 200): Promise<T[]> {
+  const db = serverDb();
+  if (!db) return [];
+  try {
+    const snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get();
+    return snap.docs
+      .map((d) => {
+        try {
+          return JSON.parse(String(d.get('json') || 'null')) as T;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean) as T[];
+  } catch (err) {
+    console.error('[storage] No se pudo listar Firestore:', (err as Error).message);
+    return [];
+  }
+}

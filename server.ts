@@ -9,11 +9,14 @@ import { registerDanielRoutes } from './server/daniel.ts';
 import { registerAuth } from './server/auth.ts';
 import { claudeJsonClient } from './server/claudeJson.ts';
 import { registerSiteRoutes } from './server/sites.ts';
+import { registerLeadRoutes } from './server/leads.ts';
 import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
 
 const app = express();
+// Render pone un proxy delante: así req.ip es la IP real del visitante (para los límites).
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '5mb' }));
@@ -2369,6 +2372,8 @@ Coordina tus departamentos especializados y devuelve un JSON estructurado con:
 registerDanielRoutes(app, (userId) => readWorkspace(userId));
 // Creador de webs (maqueta con portada 3D, cambios y descarga).
 registerSiteRoutes(app, { read: (uid) => readWorkspace(uid), write: (data, uid) => writeWorkspace(data, uid) });
+// Solicitudes de llamada de empresas (después de su maqueta gratis).
+registerLeadRoutes(app);
 
 // Start Server with Vite Middleware in Development or Static in Production
 async function startServer() {
