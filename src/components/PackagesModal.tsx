@@ -34,13 +34,14 @@ export const PACKAGES = [
 ] as const;
 
 export const UPGRADES = [
-  { id: 'plantilla-premium', name: { es: 'Plantilla premium para la portada', en: 'Premium hero template' } },
-  { id: 'chatbot', name: { es: 'Chatbot', en: 'Chatbot' } },
-  { id: 'agente-ia', name: { es: 'Agente de IA', en: 'AI agent' } },
-  { id: 'backoffice', name: { es: 'Backoffice (sistema de gestión)', en: 'Back office' } },
-  { id: 'mantenimiento', name: { es: 'Mantenimiento mensual', en: 'Monthly maintenance' } },
-  { id: 'dominio-hosting', name: { es: 'Dominio y hosting', en: 'Domain and hosting' } },
-  { id: 'idioma-extra', name: { es: 'Versión en otro idioma', en: 'Extra language version' } },
+  // Precios sugeridos (ver la calculadora, hoja "Mantenimiento y extras"): pago único + mensual.
+  { id: 'plantilla-premium', price: { es: '150 USD', en: '$150' }, name: { es: 'Plantilla premium para la portada', en: 'Premium hero template' } },
+  { id: 'chatbot', price: { es: '250 USD + 29 USD/mes', en: '$250 + $29/mo' }, name: { es: 'Chatbot', en: 'Chatbot' } },
+  { id: 'agente-ia', price: { es: '600 USD + 59 USD/mes', en: '$600 + $59/mo' }, name: { es: 'Agente de IA', en: 'AI agent' } },
+  { id: 'backoffice', price: { es: '900 USD + 49 USD/mes', en: '$900 + $49/mo' }, name: { es: 'Backoffice (sistema de gestión)', en: 'Back office' } },
+  { id: 'mantenimiento', price: { es: 'desde 29 USD/mes', en: 'from $29/mo' }, name: { es: 'Mantenimiento mensual', en: 'Monthly maintenance' } },
+  { id: 'dominio-hosting', price: { es: '25 USD/año', en: '$25/yr' }, name: { es: 'Dominio .com', en: '.com domain' } },
+  { id: 'idioma-extra', price: { es: '200 USD', en: '$200' }, name: { es: 'Versión en otro idioma', en: 'Extra language version' } },
 ] as const;
 
 interface PackagesModalProps {
@@ -159,10 +160,11 @@ export function PackagesModal({ lang, themeMode = 'light', siteId, isOpen, onClo
                 {UPGRADES.map((u) => (
                   <button key={u.id} type="button" onClick={() => toggle(u.id)} aria-pressed={upgrades.includes(u.id)} className={s.chip(upgrades.includes(u.id))}>
                     {upgrades.includes(u.id) && <Check className="w-3 h-3" />} {u.name[L]}
+                    <span className="opacity-60">· {u.price[L]}</span>
                   </button>
                 ))}
               </div>
-              <p className={`text-xs ${s.faint}`}>{t('El precio de los extras se define en la llamada.', 'Extras are priced on the call.')}</p>
+              <p className={`text-xs ${s.faint}`}>{t('Precios de referencia; el total final se confirma en la llamada. El mantenimiento mensual incluye hosting, seguridad (SSL), copias de respaldo y el funcionamiento del chatbot o agente.', 'Reference prices; the final total is confirmed on the call. Monthly maintenance includes hosting, SSL, backups and running the chatbot or agent.')}</p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">

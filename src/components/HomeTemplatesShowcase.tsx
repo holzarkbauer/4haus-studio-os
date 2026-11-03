@@ -8,7 +8,7 @@ import heroStudioImg from '../assets/images/apple_style_hero_studio_179162446789
 
 // Plantillas del inicio. Cada una trae el prompt que se carga en la casilla al elegirla.
 // Para añadir una plantilla nueva basta con agregar un objeto a esta lista.
-type TemplateCategory = 'premium3d' | 'landing' | 'tienda' | 'app' | 'dashboard';
+type TemplateCategory = 'premium3d' | 'isometrica' | 'landing' | 'tienda' | 'app' | 'dashboard';
 
 interface HomeTemplate {
   id: string;
@@ -16,7 +16,9 @@ interface HomeTemplate {
   name: { es: string; en: string };
   description: { es: string; en: string };
   image?: string;
-  preview?: 'studio' | 'store' | 'product' | 'luxury' | 'restaurant';
+  preview?: 'studio' | 'store' | 'product' | 'luxury' | 'restaurant' | 'wire';
+  /** Página de muestra que se puede abrir en vivo (portadas isométricas). */
+  liveUrl?: string;
   prompt: { es: string; en: string };
 }
 
@@ -121,11 +123,104 @@ export const HOME_TEMPLATES: HomeTemplate[] = [
       en: 'Create a web app with an AI assistant for a local business. Chat that answers FAQs, shows services with prices and lets visitors book an appointment. Include a simple panel to see bookings.',
     },
   },
+  {
+    id: 'iso-producto-tech',
+    category: 'isometrica',
+    name: { es: 'Producto tecnológico (isométrica)', en: 'Tech product (isometric)' },
+    description: { es: 'Pieza interactiva que el visitante puede presionar', en: 'An interactive piece the visitor can press' },
+    image: '/templates/thumbs/portada-producto-tech.jpg',
+    liveUrl: '/templates/portada-producto-tech.html',
+    prompt: {
+      es: 'Crea la web de un producto tecnológico. Portada oscura con una ilustración isométrica interactiva en SVG de líneas finas (estilo plano técnico): un mecanismo que responde al pasar el cursor, con una lectura en vivo. Titular corto, beneficios en 3 columnas, cómo funciona en 3 pasos, preguntas frecuentes y llamada a la acción para pedir acceso.',
+      en: 'Create a website for a tech product. Dark hero with an interactive isometric line-art SVG illustration (technical drawing style): a mechanism that reacts on hover with a live readout. Short headline, 3-column benefits, how it works in 3 steps, FAQ and a call to action to request access.',
+    },
+  },
+  {
+    id: 'iso-ingenieria',
+    category: 'isometrica',
+    name: { es: 'Ingeniería y precisión (isométrica)', en: 'Engineering and precision (isometric)' },
+    description: { es: 'Instrumento de medición que se mueve con el cursor', en: 'A measuring instrument that moves with the cursor' },
+    image: '/templates/thumbs/portada-ingenieria-precision.jpg',
+    liveUrl: '/templates/portada-ingenieria-precision.html',
+    prompt: {
+      es: 'Crea la web de una empresa de ingeniería, metrología o servicios técnicos. Portada con una ilustración isométrica interactiva en SVG de un instrumento de precisión que se mueve con el cursor. Servicios, sectores que atiende, certificaciones [reales del cliente], proceso de trabajo y formulario de cotización.',
+      en: 'Create a website for an engineering, metrology or technical services company. Hero with an interactive isometric SVG illustration of a precision instrument that moves with the cursor. Services, industries served, [real client] certifications, work process and a quote form.',
+    },
+  },
+  {
+    id: 'iso-educacion',
+    category: 'isometrica',
+    name: { es: 'Educación y ciencia (isométrica)', en: 'Education and science (isometric)' },
+    description: { es: 'Laboratorio animado para cursos y programas', en: 'An animated lab for courses and programs' },
+    image: '/templates/thumbs/portada-educacion-ciencia.jpg',
+    liveUrl: '/templates/portada-educacion-ciencia.html',
+    prompt: {
+      es: 'Crea la web de una academia, colegio o programa de ciencia. Portada con una ilustración isométrica animada en SVG de un equipo de laboratorio. Programas o cursos con su duración, metodología, horarios, preguntas frecuentes y botón para inscribirse.',
+      en: 'Create a website for an academy, school or science program. Hero with an animated isometric SVG illustration of lab equipment. Programs or courses with duration, methodology, schedules, FAQ and an enroll button.',
+    },
+  },
+  {
+    id: 'iso-gaming',
+    category: 'isometrica',
+    name: { es: 'Entretenimiento y gaming (isométrica)', en: 'Entertainment and gaming (isometric)' },
+    description: { es: 'Máquina recreativa detallada para salas y eventos', en: 'A detailed arcade machine for venues and events' },
+    image: '/templates/thumbs/portada-entretenimiento-gaming.jpg',
+    liveUrl: '/templates/portada-entretenimiento-gaming.html',
+    prompt: {
+      es: 'Crea la web de una sala de juegos, centro de entretenimiento o eventos gamer. Portada con una ilustración isométrica en SVG de una máquina recreativa con detalles animados. Experiencias y precios, paquetes para cumpleaños o empresas, ubicación y horarios, y botón para reservar.',
+      en: 'Create a website for an arcade, entertainment center or gaming events. Hero with an isometric SVG illustration of an arcade machine with animated details. Experiences and prices, birthday or corporate packages, location and hours, and a booking button.',
+    },
+  },
+  {
+    id: 'estructura-keynote',
+    category: 'landing',
+    name: { es: 'Página de producto tipo keynote', en: 'Keynote-style product page' },
+    description: { es: 'Un beneficio por pantalla, comparativa y especificaciones', en: 'One benefit per screen, comparison and specs' },
+    preview: 'wire',
+    prompt: {
+      es: 'Crea una página de producto con estructura tipo keynote: portada con el producto grande y un titular de 3 palabras; luego secciones a pantalla completa, cada una con un solo beneficio y una imagen o animación; comparativa de modelos en columnas; especificaciones técnicas; y llamada a la acción para comprar o reservar. Diseño original para mi marca.',
+      en: 'Create a product page with a keynote-style structure: hero with the product large and a 3-word headline; then full-screen sections, each with one benefit and a visual; a model comparison in columns; tech specs; and a buy or reserve call to action. Original design for my brand.',
+    },
+  },
+  {
+    id: 'estructura-saas',
+    category: 'landing',
+    name: { es: 'Software con pruebas de confianza', en: 'Software with trust signals' },
+    description: { es: 'Demo, cómo funciona, precios por niveles y preguntas', en: 'Demo, how it works, tiered pricing and FAQ' },
+    preview: 'wire',
+    prompt: {
+      es: 'Crea una landing para un software o servicio digital: portada con titular, subtítulo y una vista del producto; franja para logos de clientes [reales]; 3 beneficios; cómo funciona en 3 pasos; testimonios [reales]; tabla de precios por niveles; preguntas frecuentes y llamada a la acción final.',
+      en: 'Create a landing page for software or a digital service: hero with headline, subheadline and a product view; a strip for [real] client logos; 3 benefits; how it works in 3 steps; [real] testimonials; tiered pricing table; FAQ and a final call to action.',
+    },
+  },
+  {
+    id: 'estructura-reservas',
+    category: 'landing',
+    name: { es: 'Reservas y experiencias', en: 'Bookings and experiences' },
+    description: { es: 'Buscador arriba, categorías y tarjetas con precio', en: 'Search on top, categories and priced cards' },
+    preview: 'wire',
+    prompt: {
+      es: 'Crea una web de reservas de experiencias o alojamientos: buscador destacado en la portada (destino, fecha, personas); categorías visuales; tarjetas de experiencias con foto, precio y valoración [real]; sección de cómo reservar; ubicación; y botón de reserva.',
+      en: 'Create a website for booking experiences or stays: a prominent search in the hero (destination, date, guests); visual categories; experience cards with photo, price and [real] rating; how to book; location; and a booking button.',
+    },
+  },
+  {
+    id: 'estructura-configurador',
+    category: 'landing',
+    name: { es: 'Configurador de producto', en: 'Product configurator' },
+    description: { es: 'Elige modelo y color, el precio se actualiza', en: 'Pick model and color, the price updates' },
+    preview: 'wire',
+    prompt: {
+      es: 'Crea una web con configurador de producto: portada con el producto; selector de modelo, color y extras con el precio total que se actualiza al elegir; especificaciones clave; formas de pago; y botón para reservar con un depósito.',
+      en: 'Create a website with a product configurator: hero with the product; selectors for model, color and extras with a total price that updates as you choose; key specs; payment options; and a button to reserve with a deposit.',
+    },
+  },
 ];
 
 const CATEGORY_LABELS: { id: 'todas' | TemplateCategory; es: string; en: string }[] = [
   { id: 'todas', es: 'Todas', en: 'All' },
   { id: 'premium3d', es: 'Portadas 3D', en: '3D heroes' },
+  { id: 'isometrica', es: 'Portadas isométricas', en: 'Isometric heroes' },
   { id: 'landing', es: 'Landing pages', en: 'Landing pages' },
   { id: 'tienda', es: 'Tiendas online', en: 'Online stores' },
   { id: 'app', es: 'Apps', en: 'Apps' },
@@ -223,11 +318,11 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {visibleTemplates.map((tpl) => (
+            <div key={tpl.id} className="relative">
             <button
-              key={tpl.id}
               type="button"
               onClick={() => onUseTemplatePrompt(isEn ? tpl.prompt.en : tpl.prompt.es)}
-              className="group text-left cursor-pointer"
+              className="group block w-full text-left cursor-pointer"
               title={isEn ? 'Use this template' : 'Usar esta plantilla'}
             >
               <div className={`relative aspect-[16/10] rounded-xl overflow-hidden border ${card} transition-shadow group-hover:shadow-lg`}>
@@ -257,6 +352,18 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
                       <div className="w-10 h-10 rounded-full bg-[#8E4A2A]" />
                     </div>
                   </div>
+                ) : tpl.preview === 'wire' ? (
+                  <div className="w-full h-full bg-white p-4 flex flex-col gap-2">
+                    <div className="h-2 w-1/3 rounded bg-zinc-200" />
+                    <div className="flex-1 rounded-md bg-zinc-100 flex items-center justify-center">
+                      <div className="h-3 w-1/2 rounded bg-zinc-300" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 h-1/4">
+                      <div className="rounded bg-zinc-100" />
+                      <div className="rounded bg-zinc-100" />
+                      <div className="rounded bg-zinc-100" />
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full h-full bg-[#F4F1EC] p-4 flex flex-col gap-3">
                     <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-700">
@@ -282,6 +389,17 @@ export function HomeTemplatesShowcase({ lang, themeMode = 'light', onUseTemplate
                 <div className={`text-xs ${muted}`}>{isEn ? tpl.description.en : tpl.description.es}</div>
               </div>
             </button>
+            {tpl.liveUrl && (
+              <a
+                href={tpl.liveUrl}
+                target="_blank"
+                rel="noopener"
+                className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/90 text-black hover:bg-white`}
+              >
+                {isEn ? 'Live preview' : 'Ver en vivo'}
+              </a>
+            )}
+            </div>
           ))}
         </div>
       </section>
