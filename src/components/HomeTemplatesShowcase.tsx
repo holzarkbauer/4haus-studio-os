@@ -21,7 +21,7 @@ interface HomeTemplate {
 }
 
 // Orden de la galería: primero las portadas 3D premium.
-const HOME_TEMPLATES: HomeTemplate[] = [
+export const HOME_TEMPLATES: HomeTemplate[] = [
   {
     id: 'estudio-creativo-3d',
     category: 'premium3d',

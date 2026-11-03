@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { registerDanielRoutes } from './server/daniel.ts';
 import { registerAuth } from './server/auth.ts';
 import { claudeJsonClient } from './server/claudeJson.ts';
+import { registerSiteRoutes } from './server/sites.ts';
 import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
@@ -2366,6 +2367,8 @@ Coordina tus departamentos especializados y devuelve un JSON estructurado con:
 
 // Daniel: resumen corto + entregables, con tope de gasto diario (server/daniel.ts)
 registerDanielRoutes(app, (userId) => readWorkspace(userId));
+// Creador de webs (maqueta con portada 3D, cambios y descarga).
+registerSiteRoutes(app, { read: (uid) => readWorkspace(uid), write: (data, uid) => writeWorkspace(data, uid) });
 
 // Start Server with Vite Middleware in Development or Static in Production
 async function startServer() {

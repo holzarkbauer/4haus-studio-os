@@ -34,6 +34,7 @@ import { ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { UserDashboard } from './UserDashboard';
 import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import { CaptarClientesFlow } from './CaptarClientesFlow';
+import { WebsiteStudio } from './WebsiteStudio';
 
 // Identificadores de "Captar clientes" (los antiguos siguen funcionando para Daniel y otros botones)
 const GROWTH_IDS = ['growth-os', 'negocio-perfil', 'prospectos-crm', 'campanas-ia', 'landings-brief', 'conexiones-api'];
@@ -115,6 +116,12 @@ export function HomeWorkbench({
   const [templatePrompt, setTemplatePrompt] = useState<string | null>(null);
   // "Captar clientes": paso a paso por defecto; la vista avanzada (LeadNicho completo) a un clic.
   const [showAdvancedGrowth, setShowAdvancedGrowth] = useState(false);
+  // Pedido pendiente para el creador de webs (desde la casilla del inicio o una plantilla).
+  const [webBrief, setWebBrief] = useState<string | null>(null);
+  const startWebsite = (brief: string) => {
+    setWebBrief(brief);
+    onSelectSidebarItem('crear-web');
+  };
   useEffect(() => {
     if (!GROWTH_IDS.includes(activeSidebarItem)) setShowAdvancedGrowth(false);
   }, [activeSidebarItem]);
@@ -204,6 +211,7 @@ export function HomeWorkbench({
               onOpenDanielModal={onOpenDanielModal}
               prefillPrompt={templatePrompt}
               onPrefillConsumed={() => setTemplatePrompt(null)}
+              onStartWebsite={startWebsite}
             />
 
             {/* 1. PLANTILLAS CON SU PROMPT + FUNCIONES + LLAMADA FINAL */}
@@ -333,12 +341,22 @@ export function HomeWorkbench({
               lang={lang}
               themeMode={themeMode}
               galleryOnly
-              onUseTemplatePrompt={(prompt) => {
-                setTemplatePrompt(prompt);
-                onSelectSidebarItem('inicio');
-              }}
+              onUseTemplatePrompt={(prompt) => startWebsite(prompt)}
             />
           </div>
+        )}
+
+        {/* CREAR WEB: describe → maqueta con portada 3D → cambios → descarga */}
+        {activeSidebarItem === 'crear-web' && (
+          <WebsiteStudio
+            lang={lang}
+            themeMode={themeMode}
+            userId={userId}
+            isLoggingIn={isLoggingIn}
+            onGoogleLogin={onGoogleLogin}
+            startBrief={webBrief}
+            onStartConsumed={() => setWebBrief(null)}
+          />
         )}
 
         {/* VIEW 4: AI AGENTS */}

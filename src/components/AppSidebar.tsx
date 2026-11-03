@@ -176,6 +176,7 @@ export function AppSidebar({
 
           {[
             { id: 'inicio', label: t.home, icon: Home },
+            { id: 'crear-web', label: lang === 'en' ? 'Create website' : 'Crear web', icon: Globe },
             { id: 'websites', label: lang === 'en' ? 'Templates' : 'Plantillas', icon: LayoutTemplate },
             { id: 'voz', label: t.customVoice, icon: Mic2, hasPlus: true },
             { id: 'aprende', label: lang === 'en' ? 'Learn' : 'Aprende', icon: BookOpen },

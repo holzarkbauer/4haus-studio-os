@@ -66,6 +66,8 @@ interface GuidedPromptHeroProps {
   /** Texto que llega desde una plantilla del inicio para cargarlo en la casilla. */
   prefillPrompt?: string | null;
   onPrefillConsumed?: () => void;
+  /** Con la categoría "Página web", el pedido abre el creador de webs. */
+  onStartWebsite?: (brief: string) => void;
 }
 
 export function GuidedPromptHero({
@@ -78,6 +80,7 @@ export function GuidedPromptHero({
   onNavigateToModule,
   onOpenPlans,
   onOpenDanielModal,
+  onStartWebsite,
   prefillPrompt,
   onPrefillConsumed,
 }: GuidedPromptHeroProps) {
@@ -212,6 +215,11 @@ export function GuidedPromptHero({
     }
 
     // La casilla del inicio envía a Daniel: responde en su panel con entregables (estilo Claude).
+    if (!overrideText && selectedCategory === 'web' && onStartWebsite) {
+      onStartWebsite(textToSend);
+      setPromptInput('');
+      return;
+    }
     if (!overrideText) {
       askDaniel(`${activeCategoryObj.label}: ${textToSend}`);
       setPromptInput('');

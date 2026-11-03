@@ -81,3 +81,31 @@ export function saveServerDoc(id: string, value: Record<string, unknown>) {
     .set(value)
     .catch((err) => console.error('[storage] No se pudo guardar estado:', (err as Error).message));
 }
+
+/** Documento grande guardado como texto JSON (p. ej. una web generada). */
+export async function loadJsonDoc<T>(collection: string, id: string): Promise<T | null> {
+  const db = serverDb();
+  if (!db) return null;
+  try {
+    const snap = await db.collection(collection).doc(id).get();
+    const json = snap.exists ? snap.get('json') : null;
+    return typeof json === 'string' ? (JSON.parse(json) as T) : null;
+  } catch (err) {
+    console.error('[storage] No se pudo leer de Firestore:', (err as Error).message);
+    return null;
+  }
+}
+
+export function saveJsonDoc(collection: string, id: string, value: unknown, ownerId: string) {
+  const db = serverDb();
+  if (!db) return;
+  const json = JSON.stringify(value);
+  if (json.length > 900_000) {
+    console.error(`[storage] ${collection}/${id} supera el límite de Firestore (${json.length} bytes); no se copió.`);
+    return;
+  }
+  db.collection(collection)
+    .doc(id)
+    .set({ json, ownerId, updatedAt: new Date().toISOString() })
+    .catch((err) => console.error('[storage] No se pudo guardar en Firestore:', (err as Error).message));
+}
