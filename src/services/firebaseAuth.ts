@@ -29,13 +29,18 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
-// Required Workspace Scopes
+// Permiso de Gmail: SOLO se pide cuando alguien usa "enviar campaña por Gmail".
+// Pedirlo al iniciar sesión hacía que Google mostrara "Google no verificó esta app" a todos.
 export const SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
 ];
 
+// Inicio de sesión normal: solo nombre, correo y foto (no necesita verificación de Google).
 const provider = new GoogleAuthProvider();
-SCOPES.forEach((scope) => provider.addScope(scope));
+provider.setCustomParameters({ prompt: 'select_account' });
+
+const gmailProvider = new GoogleAuthProvider();
+SCOPES.forEach((scope) => gmailProvider.addScope(scope));
 
 // In-memory OAuth access token cache (never stored in localStorage/sessionStorage)
 let isSigningIn = false;
@@ -169,7 +174,7 @@ export const initAuth = (
   });
 };
 
-// Sign in with Google Popup + Request Gmail Send Scope
+// Iniciar sesión con Google (sin permisos extra)
 export const googleSignIn = async (): Promise<{
   user: User;
   accessToken: string | null;
@@ -178,11 +183,24 @@ export const googleSignIn = async (): Promise<{
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    cachedAccessToken = credential?.accessToken || null;
-    return { user: result.user, accessToken: cachedAccessToken };
+    // Este token no incluye el permiso de Gmail: no se guarda para enviar correos.
+    return { user: result.user, accessToken: credential?.accessToken || null };
   } catch (error) {
     console.error('Sign in error:', error);
     throw error;
+  } finally {
+    isSigningIn = false;
+  }
+};
+
+// Pide el permiso de envío de Gmail solo cuando hace falta (campañas por correo).
+export const requestGmailAccess = async (): Promise<string | null> => {
+  try {
+    isSigningIn = true;
+    const result = await signInWithPopup(auth, gmailProvider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    cachedAccessToken = credential?.accessToken || null;
+    return cachedAccessToken;
   } finally {
     isSigningIn = false;
   }
@@ -648,8 +666,7 @@ export async function sendGmailCampaignEmail(params: {
 }): Promise<{ id: string; threadId: string }> {
   let token = await getAccessToken();
   if (!token) {
-    const signInResult = await googleSignIn();
-    token = signInResult?.accessToken || null;
+    token = await requestGmailAccess();
   }
   if (!token) {
     throw new Error('Se requiere iniciar sesión con Google y autorizar el permiso de envío de Gmail.');
