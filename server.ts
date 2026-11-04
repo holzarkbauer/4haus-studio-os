@@ -10,6 +10,7 @@ import { registerAuth } from './server/auth.ts';
 import { claudeJsonClient } from './server/claudeJson.ts';
 import { registerSiteRoutes } from './server/sites.ts';
 import { registerLeadRoutes } from './server/leads.ts';
+import { registerAccessRoutes } from './server/access.ts';
 import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
@@ -2374,6 +2375,8 @@ registerDanielRoutes(app, (userId) => readWorkspace(userId));
 registerSiteRoutes(app, { read: (uid) => readWorkspace(uid), write: (data, uid) => writeWorkspace(data, uid) });
 // Solicitudes de llamada de empresas (después de su maqueta gratis).
 registerLeadRoutes(app);
+// Códigos de acceso y Programa de creadores.
+registerAccessRoutes(app);
 
 // Start Server with Vite Middleware in Development or Static in Production
 async function startServer() {

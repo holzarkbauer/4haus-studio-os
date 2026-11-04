@@ -130,3 +130,20 @@ export async function listJsonDocs<T>(collection: string, limit = 200): Promise<
     return [];
   }
 }
+
+/**
+ * Crea un documento solo si no existe (operación atómica en Firestore).
+ * Devuelve false si ya existía: sirve para que un código de acceso se use una sola vez.
+ * Sin Firestore devuelve null y quien llama usa su respaldo local.
+ */
+export async function createOnce(collection: string, id: string, value: Record<string, unknown>): Promise<boolean | null> {
+  const db = serverDb();
+  if (!db) return null;
+  try {
+    await db.collection(collection).doc(id).create(value);
+    return true;
+  } catch (err: any) {
+    if (err?.code === 6 || /already exists/i.test(String(err?.message))) return false;
+    throw err;
+  }
+}

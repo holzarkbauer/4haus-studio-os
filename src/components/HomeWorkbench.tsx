@@ -35,6 +35,7 @@ import { UserDashboard } from './UserDashboard';
 import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import { CaptarClientesFlow } from './CaptarClientesFlow';
 import { WebsiteStudio } from './WebsiteStudio';
+import { CreatorProgram } from './CreatorProgram';
 
 // Identificadores de "Captar clientes" (los antiguos siguen funcionando para Daniel y otros botones)
 const GROWTH_IDS = ['growth-os', 'negocio-perfil', 'prospectos-crm', 'campanas-ia', 'landings-brief', 'conexiones-api'];
@@ -344,6 +345,11 @@ export function HomeWorkbench({
               onUseTemplatePrompt={(prompt) => startWebsite(prompt)}
             />
           </div>
+        )}
+
+        {/* PROGRAMA DE CREADORES: pedir y canjear códigos; aprobación del administrador */}
+        {activeSidebarItem === 'creadores' && (
+          <CreatorProgram lang={lang} themeMode={themeMode} userId={userId} isLoggingIn={isLoggingIn} onGoogleLogin={onGoogleLogin} />
         )}
 
         {/* CREAR WEB: describe → maqueta con portada 3D → cambios → descarga */}

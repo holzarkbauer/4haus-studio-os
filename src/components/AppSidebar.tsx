@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { 
+import {
+  KeyRound, 
   Home, 
   Mic2, 
   Compass, 
@@ -233,6 +234,7 @@ export function AppSidebar({
           {[
             // Una sola entrada: los pasos (negocio, CRM, campañas, landing, conexiones) son pestañas dentro.
             { id: 'growth-os', label: lang === 'en' ? 'Win clients' : 'Captar clientes', icon: Target },
+            { id: 'creadores', label: lang === 'en' ? 'Creators' : 'Creadores', icon: KeyRound },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = [

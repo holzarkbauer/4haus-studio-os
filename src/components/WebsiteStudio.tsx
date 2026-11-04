@@ -436,7 +436,7 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
         <button type="button" onClick={() => askDaniel(t('¿Cómo describo bien mi web para que quede profesional?', 'How do I describe my website so it looks professional?'))} className={s.ghostButton}>
           {t('Pedirle ayuda a Daniel', 'Ask Daniel for help')}
         </button>
-      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? onGoogleLogin : undefined} />
+      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? () => { setShowPackages(false); window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'creadores' })); } : undefined} />
       </div>
     );
   }
@@ -491,8 +491,8 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
               <button type="button" onClick={() => setShowPackages(true)} className={`${s.primaryButton} w-full`}>
                 {t('Ver paquetes y agendar llamada', 'See packages and book a call')}
               </button>
-              <button type="button" onClick={onGoogleLogin} disabled={isLoggingIn} className={`${s.secondaryButton} w-full justify-center`}>
-                {t('Soy creador: registrarme', 'I am a creator: sign up')}
+              <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'creadores' }))} className={`${s.secondaryButton} w-full justify-center`}>
+                {t('Soy creador: ver el programa', 'I am a creator: see the program')}
               </button>
             </div>
           ) : site.status === 'error' ? (
@@ -575,7 +575,7 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           )}
         </div>
       </section>
-      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? onGoogleLogin : undefined} />
+      <PackagesModal lang={lang} themeMode={themeMode} siteId={site?.id} isOpen={showPackages} onClose={() => setShowPackages(false)} onCreatorSignIn={guest ? () => { setShowPackages(false); window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'creadores' })); } : undefined} />
     </div>
   );
 }
