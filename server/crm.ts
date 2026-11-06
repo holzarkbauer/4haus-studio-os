@@ -255,7 +255,7 @@ interface Found {
   sourceUrl: string;
 }
 
-async function searchBusinesses(input: { rubro: string; city: string; quantity: number; idealClient: string }) {
+export async function searchBusinesses(input: { rubro: string; city: string; quantity: number; idealClient: string }) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw Object.assign(new Error('Falta la clave de Anthropic en el servidor.'), { status: 503 });
   const base = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
@@ -338,7 +338,34 @@ Responde SOLO con un JSON: {"businesses":[{"name":"","rubro":"","city":"","addre
   return { businesses: list, costUsd: Math.round(cost * 1000) / 1000, searches: nSearch };
 }
 
+// Búsqueda para creadores (desde "Captar clientes"): requiere cuenta con sesión y tiene su propio límite diario.
+const USER_SEARCHES_PER_DAY = Number(process.env.PROSPECT_DAILY_SEARCHES_PER_USER || 5);
+const userSearches = new Map<string, { day: string; n: number }>();
+
 export function registerCrmRoutes(app: Express) {
+  app.post('/api/studio/prospects/search', async (req: Request, res: Response) => {
+    const uid = req.auth?.verified ? req.auth.uid : null;
+    if (!uid) return res.status(401).json({ error: 'Inicia sesión con Google para buscar negocios.' });
+    const rubro = clean(req.body?.rubro, 80);
+    const city = clean(req.body?.city, 80);
+    const quantity = Math.max(1, Math.min(10, Number(req.body?.quantity) || 5));
+    const idealClient = clean(req.body?.idealClient, 400);
+    if (rubro.length < 2 || city.length < 2) return res.status(400).json({ error: 'Elige un rubro y escribe la ciudad.' });
+    const today = new Date().toISOString().slice(0, 10);
+    const used = userSearches.get(uid);
+    const n = used && used.day === today ? used.n : 0;
+    if (n >= USER_SEARCHES_PER_DAY) return res.status(429).json({ error: `Llegaste al límite de ${USER_SEARCHES_PER_DAY} búsquedas de hoy.` });
+    if (!(await aiBudgetAvailable())) return res.status(429).json({ error: 'Se alcanzó el presupuesto diario de IA. Vuelve mañana.' });
+    userSearches.set(uid, { day: today, n: n + 1 });
+    try {
+      const result = await searchBusinesses({ rubro, city, quantity, idealClient });
+      res.json({ businesses: result.businesses, remainingToday: USER_SEARCHES_PER_DAY - n - 1 });
+    } catch (err: any) {
+      console.error('[prospectos] Búsqueda falló:', err.message);
+      res.status(err.status || 502).json({ error: 'No pude completar la búsqueda. Intenta de nuevo en un momento.' });
+    }
+  });
+
   // ¿Esta cuenta es del equipo de 4haus? (para mostrar el CRM en el menú)
   app.get('/api/studio/admin/me', (req: Request, res: Response) => res.json({ admin: isAdmin(req) }));
 

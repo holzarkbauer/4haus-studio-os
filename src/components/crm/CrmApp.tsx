@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
+import { RUBROS } from '../../data/rubros';
 
 // CRM interno de 4haus (solo el equipo). Empieza vacío y se llena con datos reales:
 // solicitudes de llamada, pedidos de código, códigos canjeados y negocios buscados.
@@ -72,18 +73,7 @@ const STAGES: Record<Kind, { id: string; es: string; en: string }[]> = {
   ],
 };
 
-const RUBROS = [
-  'Restaurantes',
-  'Clínicas dentales',
-  'Inmobiliarias',
-  'Gimnasios',
-  'Salones de belleza',
-  'Estudios de abogados',
-  'Contratistas (techos, HVAC, plomería)',
-  'Hoteles y hospedajes',
-  'Tiendas de ropa',
-  'Academias y cursos',
-];
+
 
 type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar';
 

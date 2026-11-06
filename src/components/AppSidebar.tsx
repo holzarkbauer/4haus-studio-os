@@ -288,8 +288,8 @@ export function AppSidebar({
           )}
 
           {[
-            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: undefined as string | undefined },
-            { id: 'store', label: t.store, icon: ShoppingBag, badge: undefined as string | undefined },
+            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: (lang === 'en' ? 'Soon' : 'Pronto') as string | undefined },
+            { id: 'store', label: t.store, icon: ShoppingBag, badge: (lang === 'en' ? 'Soon' : 'Pronto') as string | undefined },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;

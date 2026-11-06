@@ -102,7 +102,7 @@ const ES_TRANSLATIONS: WorkbenchContent = {
   sidebar: {
     creative: 'Creativo',
     developer: 'Desarrollador',
-    upgradeTitle: 'ACTUALIZA A...',
+    upgradeTitle: 'Ver planes',
     upgradeSubtitle: 'Ver Planes y Precios',
     socialMedia: 'Redes Sociales',
     caseStudies: 'Casos de Estudio',
@@ -208,7 +208,7 @@ const EN_TRANSLATIONS: WorkbenchContent = {
   sidebar: {
     creative: 'Creative',
     developer: 'Developer',
-    upgradeTitle: 'UPGRADE TO...',
+    upgradeTitle: 'See plans',
     upgradeSubtitle: 'View Plans & Pricing',
     socialMedia: 'Social Networks',
     caseStudies: 'Case Studies',
