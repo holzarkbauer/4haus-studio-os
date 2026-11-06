@@ -56,3 +56,27 @@ h1, h2, h3, h4, .font-display {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(134, 134, 139, 0.45);
 }
+
+/* Toque premium al navegar: los botones se hunden levemente al presionarlos.
+   Se desactiva para quien pidió "reducir movimiento" en su sistema. */
+button:not(:disabled),
+a[role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Duración por defecto en la capa base: si un botón ya define la suya, se respeta. */
+@layer base {
+  button, a[role="button"] { transition-duration: 160ms; }
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  button:not(:disabled):active { transform: none; }
+}
