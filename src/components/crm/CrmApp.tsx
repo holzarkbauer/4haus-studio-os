@@ -18,6 +18,11 @@ import {
   FileSignature,
   Briefcase,
   RefreshCw,
+  FileText,
+  AlertTriangle,
+  Sparkles,
+  DollarSign,
+  Trophy,
 } from 'lucide-react';
 import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
@@ -136,123 +141,156 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
 
   const stageLabel = (c: Pick<CrmContact, 'kind' | 'stage'>) => STAGES[c.kind].find((st) => st.id === c.stage)?.[L] || c.stage;
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
-    { id: 'panel', label: t('Panel', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'leads', label: 'Leads', icon: Users },
-    { id: 'pipeline', label: 'Pipeline', icon: KanbanSquare },
-    { id: 'buscar', label: t('Buscar clientes', 'Find clients'), icon: Search },
+  const [globalQuery, setGlobalQuery] = useState('');
+  type NavItem = { id?: Tab; label: string; icon: any };
+  const nav: { group: string; items: NavItem[] }[] = [
+    { group: 'General', items: [{ id: 'panel', label: t('Panel', 'Dashboard'), icon: LayoutDashboard }, { id: 'leads', label: t('Leads (todos)', 'Leads (all)'), icon: Users }] },
+    { group: t('Clientes', 'Clients'), items: [{ id: 'pipeline', label: 'Pipeline', icon: KanbanSquare }, { id: 'buscar', label: t('Buscar clientes', 'Find clients'), icon: Search }] },
+    { group: t('Ventas', 'Sales'), items: [{ label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet }, { label: t('Propuestas', 'Proposals'), icon: FileSignature }] },
+    { group: 'Marketing', items: [{ label: t('Campañas', 'Campaigns'), icon: Megaphone }, { label: t('Agenda', 'Calendar'), icon: CalendarDays }] },
+    { group: t('Equipo', 'Team'), items: [{ label: t('Colaboradores', 'Collaborators'), icon: Briefcase }, { label: t('Documentos y firmas', 'Documents & signatures'), icon: FileText }] },
   ];
-  const upcoming = [
-    { label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet },
-    { label: t('Campañas', 'Campaigns'), icon: Megaphone },
-    { label: t('Agenda', 'Calendar'), icon: CalendarDays },
-    { label: t('Propuestas', 'Proposals'), icon: FileSignature },
-    { label: t('Equipo y documentos', 'Team & documents'), icon: Briefcase },
-  ];
+  const current = nav.flatMap((g) => g.items).find((i) => i.id === tab);
+  const border = isDark ? 'border-white/10' : 'border-black/[0.08]';
+
+  const navButton = (item: NavItem) => {
+    const Icon = item.icon;
+    const active = item.id === tab;
+    const soon = !item.id;
+    return (
+      <button
+        key={item.label}
+        type="button"
+        disabled={soon}
+        onClick={() => item.id && setTab(item.id)}
+        aria-current={active ? 'page' : undefined}
+        className={`relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-left cursor-pointer disabled:cursor-default ${
+          active ? (isDark ? 'text-black font-semibold' : 'text-white font-semibold') : soon ? s.faint : isDark ? 'text-zinc-300 hover:bg-white/5' : 'text-[#1D1D1F] hover:bg-black/[0.03]'
+        }`}
+      >
+        {active && <motion.span layoutId="crm-nav" className={`absolute inset-0 rounded-xl ${isDark ? 'bg-white' : 'bg-[#1D1D1F]'}`} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+        <Icon className="w-4 h-4 relative shrink-0" />
+        <span className="relative truncate flex-1">{item.label}</span>
+        {soon && <span className={`relative text-[10px] px-1.5 py-0.5 rounded-md ${s.soft}`}>{t('Pronto', 'Soon')}</span>}
+      </button>
+    );
+  };
 
   return (
-    <div className="max-w-6xl mx-auto w-full pt-4 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h2 className={s.title}>CRM 4haus</h2>
-          <p className={`text-sm mt-1 ${s.muted}`}>
-            {t('Creadores, empresas y negocios por contactar, en un solo lugar.', 'Creators, companies and prospects in one place.')}
-          </p>
+    <div className={`w-full flex rounded-2xl border overflow-hidden min-h-[82vh] ${border} ${isDark ? 'bg-[#111113]' : 'bg-white'}`}>
+      {/* Menú del CRM, agrupado como el backoffice de AMOOO */}
+      <aside className={`hidden md:flex w-60 shrink-0 flex-col border-r ${border}`}>
+        <div className={`h-14 px-4 flex items-center gap-2 border-b ${border}`}>
+          <span className="text-[15px] font-bold tracking-tight">4HAUS</span>
+          <span className={`text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-md border ${border} ${s.muted}`}>CRM</span>
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={load} className={s.secondaryButton} aria-label={t('Actualizar', 'Refresh')}>
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> {t('Actualizar', 'Refresh')}
-          </button>
-          <button type="button" onClick={() => setEditing({ kind: 'empresa', stage: 'nuevo' })} className={s.primaryButton}>
-            <Plus className="w-4 h-4" /> {t('Añadir contacto', 'Add contact')}
-          </button>
+        <div className="flex-1 overflow-y-auto p-3 space-y-4">
+          {nav.map((g) => (
+            <div key={g.group} className="space-y-0.5">
+              <div className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider ${s.faint}`}>{g.group}</div>
+              {g.items.map(navButton)}
+            </div>
+          ))}
         </div>
-      </div>
+        <div className={`p-4 border-t text-xs ${border}`}>
+          <div className="font-semibold">{t('Equipo 4haus', '4haus team')}</div>
+          <div className={s.faint}>{t('Administrador', 'Administrator')}</div>
+        </div>
+      </aside>
 
-      <nav className={`flex flex-wrap gap-1 p-1 rounded-full w-fit ${s.soft}`} aria-label="CRM">
-        {tabs.map((tb) => {
-          const Icon = tb.icon;
-          const active = tab === tb.id;
-          return (
-            <button
-              key={tb.id}
-              type="button"
-              onClick={() => setTab(tb.id)}
-              aria-current={active ? 'page' : undefined}
-              className={`relative px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                active ? (isDark ? 'text-black' : 'text-white') : s.muted
-              }`}
-            >
-              {active && (
-                <motion.span
-                  layoutId="crm-tab"
-                  className={`absolute inset-0 rounded-full ${isDark ? 'bg-white' : 'bg-[#1D1D1F]'}`}
-                  transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                />
-              )}
-              <Icon className="w-3.5 h-3.5 relative" />
-              <span className="relative">{tb.label}</span>
+      <div className={`flex-1 min-w-0 flex flex-col ${isDark ? 'bg-black/40' : 'bg-[#FAFAFA]'}`}>
+        {/* Barra superior: ruta, buscador global y acciones */}
+        <div className={`h-14 px-4 sm:px-6 flex items-center gap-3 border-b ${border} ${isDark ? 'bg-[#111113]' : 'bg-white'}`}>
+          <div className={`hidden sm:block text-xs whitespace-nowrap ${s.muted}`}>
+            CRM <span className="mx-1">›</span> <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{current?.label}</span>
+          </div>
+          <form
+            className="flex-1 flex justify-center"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setTab('leads');
+            }}
+          >
+            <label className={`w-full max-w-md flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border ${border} ${isDark ? 'bg-white/5' : 'bg-[#F5F5F7]'}`}>
+              <Search className={`w-3.5 h-3.5 ${s.faint}`} />
+              <input
+                value={globalQuery}
+                onChange={(e) => {
+                  setGlobalQuery(e.target.value);
+                  if (e.target.value && tab !== 'leads') setTab('leads');
+                }}
+                placeholder={t('Buscar creadores, empresas, ciudades…', 'Search creators, companies, cities…')}
+                className="flex-1 bg-transparent outline-none"
+                aria-label={t('Buscar en el CRM', 'Search the CRM')}
+              />
+            </label>
+          </form>
+          <button type="button" onClick={load} className={s.iconButton} aria-label={t('Actualizar', 'Refresh')} title={t('Actualizar', 'Refresh')}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button type="button" onClick={() => setEditing({ kind: 'empresa', stage: 'nuevo' })} className={`${s.primaryButton} !px-3.5 !py-1.5 !text-xs`}>
+            <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('Añadir contacto', 'Add contact')}</span>
+          </button>
+        </div>
+
+        {/* En el celular el menú pasa a una fila deslizable */}
+        <nav className={`md:hidden flex gap-1 overflow-x-auto p-2 border-b ${border}`} aria-label="CRM">
+          {nav.flatMap((g) => g.items).filter((i) => i.id).map((i) => (
+            <button key={i.label} type="button" onClick={() => setTab(i.id!)} className={s.chip(tab === i.id)}>
+              {i.label}
             </button>
-          );
-        })}
-      </nav>
+          ))}
+        </nav>
 
-      {error && (
-        <div className={`${s.card} p-4 flex items-start gap-2 text-sm`}>
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-          <span className="flex-1">{error}</span>
-          <button type="button" onClick={() => setError(null)} className={s.iconButton} aria-label={t('Cerrar', 'Close')}>
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {loading && contacts.length === 0 ? (
-            <SkeletonRows isDark={isDark} />
-          ) : tab === 'panel' ? (
-            <Panel contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} />
-          ) : tab === 'leads' ? (
-            <Leads contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} />
-          ) : tab === 'pipeline' ? (
-            <Pipeline contacts={contacts} isDark={isDark} t={t} L={L} onOpen={setEditing} onMove={(c, stage) => save({ id: c.id, kind: c.kind, stage })} />
-          ) : (
-            <Prospect isDark={isDark} t={t} onSave={save} />
+        <div className="flex-1 p-4 sm:p-6 space-y-4">
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 text-red-800 p-3 flex items-start gap-2 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="flex-1">{error}</span>
+              <button type="button" onClick={() => setError(null)} className="p-1 cursor-pointer" aria-label={t('Cerrar', 'Close')}>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           )}
-        </motion.div>
-      </AnimatePresence>
 
-      <div className={`pt-2 text-xs ${s.faint}`}>
-        <span className="font-semibold">{t('Próximas secciones:', 'Coming next:')}</span>{' '}
-        {upcoming.map((u, i) => (
-          <span key={u.label}>
-            {u.label}
-            {i < upcoming.length - 1 ? ' · ' : ''}
-          </span>
-        ))}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {loading && contacts.length === 0 ? (
+                <SkeletonRows isDark={isDark} />
+              ) : tab === 'panel' ? (
+                <Panel contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} onGo={setTab} />
+              ) : tab === 'leads' ? (
+                <Leads contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} q={globalQuery} setQ={setGlobalQuery} />
+              ) : tab === 'pipeline' ? (
+                <Pipeline contacts={contacts} isDark={isDark} t={t} L={L} onOpen={setEditing} onMove={(c, stage) => save({ id: c.id, kind: c.kind, stage })} />
+              ) : (
+                <Prospect isDark={isDark} t={t} onSave={save} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       <AnimatePresence>
         {editing && (
           <motion.div key={editing.id || 'new'} className="fixed inset-0 z-[70] flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <Editor
-            value={editing}
-            isDark={isDark}
-            t={t}
-            L={L}
-            onClose={() => setEditing(null)}
-            onSave={async (c) => {
-              const ok = await save(c);
-              if (ok) setEditing(null);
-            }}
-          />
+            <Editor
+              value={editing}
+              isDark={isDark}
+              t={t}
+              L={L}
+              onClose={() => setEditing(null)}
+              onSave={async (c) => {
+                const ok = await save(c);
+                if (ok) setEditing(null);
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -280,112 +318,257 @@ function needsAttention(c: CrmContact) {
   return c.stage === 'nuevo' && !c.nextAction && days >= 2;
 }
 
-function Panel({ contacts, isDark, t, stageLabel, onOpen }: { contacts: CrmContact[]; isDark: boolean; t: T; stageLabel: (c: CrmContact) => string; onOpen: (c: CrmContact) => void }) {
+const DAY = 86_400_000;
+const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+
+function Alert({ tone, title, desc, onClick, onClose }: { key?: string; tone: 'amber' | 'red'; title: string; desc: string; onClick?: () => void; onClose: () => void }) {
+  const c = tone === 'red' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900';
+  return (
+    <motion.div layout initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`rounded-xl border-l-4 border p-3.5 flex gap-2.5 ${c}`}>
+      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+      <button type="button" onClick={onClick} className="flex-1 text-left cursor-pointer">
+        <div className="text-[13px] font-semibold">{title}</div>
+        <div className="text-xs opacity-80">{desc}</div>
+      </button>
+      <button type="button" onClick={onClose} className="p-1 h-fit opacity-60 hover:opacity-100 cursor-pointer" aria-label="Cerrar">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </motion.div>
+  );
+}
+
+function Bars({ rows, isDark, color = '#0071E3' }: { rows: { label: string; value: number; sub?: string }[]; isDark: boolean; color?: string }) {
   const s = ui(isDark);
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  return (
+    <ul className="space-y-3">
+      {rows.map((r) => (
+        <li key={r.label} className="text-[13px]">
+          <div className="flex justify-between gap-2">
+            <span className="truncate">{r.label}</span>
+            <span className="font-semibold">{r.sub ?? r.value}</span>
+          </div>
+          <div className={`h-1.5 mt-1.5 rounded-full ${s.soft}`}>
+            <motion.div className="h-full rounded-full" style={{ background: color }} initial={{ width: 0 }} animate={{ width: `${(r.value / max) * 100}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LineChart({ series, labels, isDark }: { series: { name: string; color: string; values: number[] }[]; labels: string[]; isDark: boolean }) {
+  const W = 640;
+  const H = 200;
+  const P = { l: 28, r: 20, t: 10, b: 22 };
+  const max = Math.max(1, ...series.flatMap((x) => x.values));
+  const step = Math.ceil(max / 4);
+  const top = step * 4;
+  const x = (i: number) => P.l + (i * (W - P.l - P.r)) / Math.max(1, labels.length - 1);
+  const y = (v: number) => H - P.b - (v / top) * (H - P.t - P.b);
+  const grid = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const text = isDark ? '#71717a' : '#86868B';
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Contactos nuevos por día">
+      {[0, 1, 2, 3, 4].map((k) => (
+        <g key={k}>
+          <line x1={P.l} x2={W - P.r} y1={y(k * step)} y2={y(k * step)} stroke={grid} />
+          <text x={P.l - 6} y={y(k * step) + 3} fontSize="9" textAnchor="end" fill={text}>{k * step}</text>
+        </g>
+      ))}
+      {labels.map((l, i) => (i % 5 === 0 || i === labels.length - 1 ? <text key={l} x={x(i)} y={H - 6} fontSize="9" textAnchor="middle" fill={text}>{l}</text> : null))}
+      {series.map((sr) => {
+        const d = sr.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+        return (
+          <g key={sr.name}>
+            <path d={`${d} L${x(sr.values.length - 1)},${y(0)} L${x(0)},${y(0)} Z`} fill={sr.color} opacity="0.08" />
+            <motion.path d={d} fill="none" stroke={sr.color} strokeWidth="2" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: 'easeOut' }} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function Panel({ contacts, isDark, t, stageLabel, onOpen, onGo }: { contacts: CrmContact[]; isDark: boolean; t: T; stageLabel: (c: CrmContact) => string; onOpen: (c: CrmContact) => void; onGo: (tab: Tab) => void }) {
+  const s = ui(isDark);
+  const [hidden, setHidden] = useState<string[]>([]);
   const creators = contacts.filter((c) => c.kind === 'creador');
   const companies = contacts.filter((c) => c.kind === 'empresa');
   const openCompanies = companies.filter((c) => !['ganado', 'perdido'].includes(c.stage));
+  const now = Date.now();
+  const inRange = (c: CrmContact, from: number, to: number) => {
+    const ts = new Date(c.createdAt).getTime();
+    return ts >= from && ts < to;
+  };
+  const last30 = contacts.filter((c) => inRange(c, now - 30 * DAY, now + DAY)).length;
+  const prev30 = contacts.filter((c) => inRange(c, now - 60 * DAY, now - 30 * DAY)).length;
+  const change = prev30 ? Math.round(((last30 - prev30) / prev30) * 100) : null;
+
+  const overdue = contacts.filter((c) => !c.doNotContact && c.nextActionAt && c.nextActionAt <= today() && !['perdido', 'ganado', 'vendio'].includes(c.stage));
+  const stale = contacts.filter((c) => needsAttention(c) && !overdue.includes(c));
+  const waiting = creators.filter((c) => c.stage === 'codigo-enviado' && c.origin?.type !== 'manual');
+
   const kpis = [
-    { label: t('Creadores activos', 'Active creators'), value: creators.filter((c) => ['activo', 'vendio'].includes(c.stage)).length },
-    { label: t('Creadores en proceso', 'Creators in progress'), value: creators.filter((c) => ['nuevo', 'contactado', 'codigo-enviado'].includes(c.stage)).length },
-    { label: t('Empresas en curso', 'Open companies'), value: openCompanies.length, sub: `${openCompanies.reduce((a, c) => a + (c.valueUsd || 0), 0).toLocaleString('en-US')} USD` },
-    { label: t('Empresas ganadas', 'Companies won'), value: companies.filter((c) => c.stage === 'ganado').length },
+    { label: t('Contactos nuevos (30 días)', 'New contacts (30 days)'), value: String(last30), sub: prev30 ? t(`vs. 30 días anteriores: ${prev30}`, `vs. previous 30 days: ${prev30}`) : t('Sin periodo anterior', 'No previous period'), change, icon: Users, tint: 'bg-blue-50 text-[#0071E3]' },
+    { label: t('Creadores activos', 'Active creators'), value: String(creators.filter((c) => ['activo', 'vendio'].includes(c.stage)).length), sub: t(`${creators.length} creadores en total`, `${creators.length} creators total`), icon: Sparkles, tint: 'bg-violet-50 text-violet-600' },
+    { label: t('Valor en pipeline', 'Pipeline value'), value: `${openCompanies.reduce((a, c) => a + (c.valueUsd || 0), 0).toLocaleString('en-US')} USD`, sub: t(`${openCompanies.length} empresas en curso`, `${openCompanies.length} open companies`), icon: DollarSign, tint: 'bg-emerald-50 text-emerald-600' },
+    { label: t('Empresas ganadas', 'Companies won'), value: String(companies.filter((c) => c.stage === 'ganado').length), sub: `${companies.filter((c) => c.stage === 'ganado').reduce((a, c) => a + (c.valueUsd || 0), 0).toLocaleString('en-US')} USD`, icon: Trophy, tint: 'bg-orange-50 text-orange-600' },
   ];
-  const bySource = Object.entries(
-    contacts.reduce<Record<string, number>>((acc, c) => {
-      const k = c.source || t('Sin origen', 'No source');
-      acc[k] = (acc[k] || 0) + 1;
-      return acc;
-    }, {}),
-  ).sort((a, b) => b[1] - a[1]);
-  const max = Math.max(1, ...bySource.map((x) => x[1]));
-  const attention = contacts.filter(needsAttention).slice(0, 6);
+
+  const days = Array.from({ length: 30 }, (_, i) => new Date(now - (29 - i) * DAY));
+  const perDay = (kind: Kind) => days.map((d) => contacts.filter((c) => c.kind === kind && c.createdAt.slice(0, 10) === dayKey(d)).length);
+  const labels = days.map((d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+
+  const bySource = Object.entries(contacts.reduce<Record<string, number>>((acc, c) => ((acc[c.source || t('Sin origen', 'No source')] = (acc[c.source || t('Sin origen', 'No source')] || 0) + 1), acc), {})).sort((a, b) => b[1] - a[1]);
+  const stageRows = (kind: Kind) => STAGES[kind].map((st) => ({ label: st[isDarkL(t)], value: contacts.filter((c) => c.kind === kind && c.stage === st.id).length }));
 
   if (contacts.length === 0) {
     return (
       <div className={`${s.card} p-10 text-center space-y-2`}>
         <p className={s.heading}>{t('Aún no hay contactos', 'No contacts yet')}</p>
         <p className={`text-sm ${s.muted}`}>
-          {t(
-            'Aparecerán solos cuando una empresa agende una llamada o un creador pida su código. También puedes buscar negocios en "Buscar clientes".',
-            'They appear automatically when a company books a call or a creator requests a code. You can also find businesses in "Find clients".',
-          )}
+          {t('Aparecerán solos cuando una empresa agende una llamada o un creador pida su código. También puedes buscar negocios en "Buscar clientes".', 'They appear automatically when a company books a call or a creator requests a code. You can also find businesses in "Find clients".')}
         </p>
+        <button type="button" onClick={() => onGo('buscar')} className={`${s.primaryButton} mt-2`}>
+          <Search className="w-4 h-4" /> {t('Buscar clientes', 'Find clients')}
+        </button>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {kpis.map((k, i) => (
-          <motion.div
-            key={k.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04, duration: 0.25 }}
-            className={`${s.card} p-5`}
-          >
-            <div className={`text-xs ${s.muted}`}>{k.label}</div>
-            <div className={`text-3xl font-bold tracking-tight mt-1 ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{k.value}</div>
-            {k.sub && <div className={`text-xs mt-0.5 ${s.faint}`}>{k.sub} {t('estimado', 'estimated')}</div>}
-          </motion.div>
-        ))}
+      <AnimatePresence initial={false}>
+        {overdue.length > 0 && !hidden.includes('overdue') && (
+          <Alert key="overdue" tone="red" title={t(`${overdue.length} contacto(s) con la próxima acción vencida`, `${overdue.length} contact(s) with an overdue next step`)} desc={t('Revísalos hoy para no perder la oportunidad.', 'Review them today.')} onClick={() => onOpen(overdue[0])} onClose={() => setHidden((h) => [...h, 'overdue'])} />
+        )}
+        {stale.length > 0 && !hidden.includes('stale') && (
+          <Alert key="stale" tone="amber" title={t(`${stale.length} contacto(s) nuevo(s) sin seguimiento`, `${stale.length} new contact(s) without follow-up`)} desc={t('Llevan más de 2 días sin próxima acción. Asígnales una.', 'Over 2 days without a next step.')} onClick={() => onOpen(stale[0])} onClose={() => setHidden((h) => [...h, 'stale'])} />
+        )}
+        {waiting.length > 0 && !hidden.includes('waiting') && (
+          <Alert key="waiting" tone="amber" title={t(`${waiting.length} creador(es) esperando aprobación`, `${waiting.length} creator(s) awaiting approval`)} desc={t('Canjearon su código. Apruébalos en la sección Creadores.', 'They redeemed their code. Approve them in Creators.')} onClick={() => window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'creadores' }))} onClose={() => setHidden((h) => [...h, 'waiting'])} />
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {kpis.map((k, i) => {
+          const Icon = k.icon;
+          return (
+            <motion.div key={k.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.3 }} className={`${s.card} p-5`}>
+              <div className="flex justify-between items-start">
+                <span className={`w-9 h-9 rounded-full flex items-center justify-center ${k.tint}`}>
+                  <Icon className="w-4 h-4" />
+                </span>
+                {k.change !== undefined && k.change !== null && (
+                  <span className={`text-[11px] font-semibold ${k.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {k.change >= 0 ? '↗' : '↘'} {Math.abs(k.change)}%
+                  </span>
+                )}
+              </div>
+              <div className={`text-xs mt-3 ${s.muted}`}>{k.label}</div>
+              <div className={`text-2xl font-bold tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{k.value}</div>
+              <div className={`text-[11px] mt-1 ${s.faint}`}>{k.sub}</div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-3">
-        <div className={`${s.card} p-5 space-y-3`}>
-          <h3 className={s.heading}>{t('Requiere tu atención', 'Needs your attention')}</h3>
-          {attention.length === 0 ? (
-            <p className={`text-sm ${s.muted}`}>{t('Todo al día.', 'All caught up.')}</p>
+      <div className="grid xl:grid-cols-3 gap-4">
+        <div className={`${s.card} p-5 xl:col-span-2`}>
+          <h3 className={s.heading}>{t('Contactos nuevos por día', 'New contacts per day')}</h3>
+          <p className={`text-xs mb-3 ${s.faint}`}>{t('Últimos 30 días', 'Last 30 days')}</p>
+          <LineChart labels={labels} isDark={isDark} series={[{ name: 'creadores', color: '#7C3AED', values: perDay('creador') }, { name: 'empresas', color: '#0071E3', values: perDay('empresa') }]} />
+          <div className={`flex justify-center gap-5 text-[11px] mt-2 ${s.muted}`}>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-600" /> {t('Creadores', 'Creators')}</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#0071E3]" /> {t('Empresas', 'Companies')}</span>
+          </div>
+        </div>
+        <div className={`${s.card} p-5`}>
+          <h3 className={s.heading}>{t('Pipeline de empresas', 'Company pipeline')}</h3>
+          <p className={`text-xs mb-4 ${s.faint}`}>{t('Por etapa', 'By stage')}</p>
+          <Bars isDark={isDark} rows={stageRows('empresa')} />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <div className={`${s.card} p-5`}>
+          <h3 className={`${s.heading} mb-4`}>{t('Creadores por etapa', 'Creators by stage')}</h3>
+          <Bars isDark={isDark} rows={stageRows('creador')} color="#7C3AED" />
+        </div>
+        <div className={`${s.card} p-5`}>
+          <h3 className={`${s.heading} mb-4`}>{t('De dónde llegan', 'Where they come from')}</h3>
+          <Bars isDark={isDark} rows={bySource.map(([label, value]) => ({ label, value }))} color="#10B981" />
+        </div>
+        <div className={`${s.card} p-5`}>
+          <h3 className={`${s.heading} mb-3`}>{t('Próximas acciones', 'Next steps')}</h3>
+          {contacts.filter((c) => c.nextAction && !c.doNotContact).length === 0 ? (
+            <p className={`text-sm ${s.muted}`}>{t('Sin acciones pendientes.', 'Nothing pending.')}</p>
           ) : (
-            <ul className="space-y-2">
-              {attention.map((c) => (
-                <li key={c.id}>
-                  <button type="button" onClick={() => onOpen(c)} className={`w-full text-left p-3 rounded-xl cursor-pointer transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/[0.03]'}`}>
-                    <div className="flex justify-between gap-2 text-sm">
-                      <span className="font-semibold truncate">{c.name || c.company}</span>
-                      <span className={`text-xs shrink-0 ${s.faint}`}>{stageLabel(c)}</span>
-                    </div>
-                    <div className={`text-xs ${s.muted}`}>
-                      {c.nextAction ? `${c.nextAction}${c.nextActionAt ? ` · ${c.nextActionAt}` : ''}` : t('Nuevo sin próxima acción', 'New with no next step')}
-                    </div>
-                  </button>
-                </li>
-              ))}
+            <ul className="space-y-1">
+              {contacts
+                .filter((c) => c.nextAction && !c.doNotContact)
+                .sort((a, b) => (a.nextActionAt || '9').localeCompare(b.nextActionAt || '9'))
+                .slice(0, 5)
+                .map((c) => (
+                  <li key={c.id}>
+                    <button type="button" onClick={() => onOpen(c)} className={`w-full text-left p-2 rounded-lg cursor-pointer ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/[0.03]'}`}>
+                      <div className="text-[13px] font-semibold truncate">{c.name || c.company}</div>
+                      <div className={`text-xs truncate ${s.muted}`}>{c.nextAction}{c.nextActionAt ? ` · ${c.nextActionAt}` : ''}</div>
+                    </button>
+                  </li>
+                ))}
             </ul>
           )}
         </div>
+      </div>
 
-        <div className={`${s.card} p-5 space-y-3`}>
-          <h3 className={s.heading}>{t('De dónde llegan', 'Where they come from')}</h3>
-          <ul className="space-y-2.5">
-            {bySource.map(([k, n]) => (
-              <li key={k} className="text-sm">
-                <div className="flex justify-between">
-                  <span className="truncate">{k}</span>
-                  <span className={s.muted}>{n}</span>
-                </div>
-                <div className={`h-1.5 mt-1 rounded-full ${s.soft}`}>
-                  <motion.div
-                    className={`h-full rounded-full ${isDark ? 'bg-white' : 'bg-[#1D1D1F]'}`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(n / max) * 100}%` }}
-                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+      <div className={`${s.card} overflow-hidden`}>
+        <div className="p-5 pb-3 flex justify-between items-end">
+          <div>
+            <h3 className={s.heading}>{t('Actividad reciente', 'Recent activity')}</h3>
+            <p className={`text-xs ${s.faint}`}>{t('Movimientos más recientes', 'Latest changes')}</p>
+          </div>
+          <button type="button" onClick={() => onGo('leads')} className="text-xs font-semibold text-[#0071E3] cursor-pointer">{t('Ver todos ›', 'See all ›')}</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className={`text-left text-xs ${s.muted} ${s.soft}`}>
+              <tr>
+                {[t('Etapa', 'Stage'), t('Fecha', 'Date'), t('Nombre', 'Name'), t('Tipo', 'Type'), t('Origen', 'Source'), t('Valor', 'Value')].map((h) => (
+                  <th key={h} className="px-5 py-2.5 font-medium whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {contacts.slice(0, 8).map((c) => (
+                <tr key={c.id} onClick={() => onOpen(c)} className={`cursor-pointer border-t ${isDark ? 'border-white/5 hover:bg-white/[0.03]' : 'border-black/[0.05] hover:bg-black/[0.02]'}`}>
+                  <td className="px-5 py-3"><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${stageTint(c.stage)}`}>{stageLabel(c)}</span></td>
+                  <td className={`px-5 py-3 whitespace-nowrap ${s.muted}`}>{c.updatedAt.slice(0, 10)}</td>
+                  <td className="px-5 py-3 font-medium whitespace-nowrap">{c.name || c.company}</td>
+                  <td className={`px-5 py-3 ${s.muted}`}>{c.kind === 'creador' ? t('Creador', 'Creator') : t('Empresa', 'Company')}</td>
+                  <td className={`px-5 py-3 whitespace-nowrap ${s.muted}`}>{c.source}</td>
+                  <td className="px-5 py-3 whitespace-nowrap">{c.valueUsd ? `${c.valueUsd.toLocaleString('en-US')} USD` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
 
-function Leads({ contacts, isDark, t, stageLabel, onOpen }: { contacts: CrmContact[]; isDark: boolean; t: T; stageLabel: (c: CrmContact) => string; onOpen: (c: CrmContact) => void }) {
+const isDarkL = (t: T): 'es' | 'en' => (t('es', 'en') as 'es' | 'en');
+function stageTint(stage: string) {
+  if (['ganado', 'activo', 'vendio'].includes(stage)) return 'bg-emerald-50 text-emerald-700';
+  if (stage === 'perdido') return 'bg-zinc-100 text-zinc-500';
+  if (['propuesta', 'codigo-enviado', 'llamada'].includes(stage)) return 'bg-blue-50 text-[#0071E3]';
+  return 'bg-amber-50 text-amber-800';
+}
+
+function Leads({ contacts, isDark, t, stageLabel, onOpen, q, setQ }: { contacts: CrmContact[]; isDark: boolean; t: T; stageLabel: (c: CrmContact) => string; onOpen: (c: CrmContact) => void; q: string; setQ: (v: string) => void }) {
   const s = ui(isDark);
-  const [q, setQ] = useState('');
   const [kind, setKind] = useState<'todos' | Kind>('todos');
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
