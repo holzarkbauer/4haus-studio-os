@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
-import { RUBROS } from '../../data/rubros';
+import { RUBROS } from '../../constants/rubros';
 import { SalesView, ProposalsView } from './SalesViews';
 
 // CRM interno de 4haus (solo el equipo). Empieza vacío y se llena con datos reales:

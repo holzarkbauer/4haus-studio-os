@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, RefreshCw, UserPlus, SlidersHorizontal, Search, Loader2, ExternalLink } from 'lucide-react';
-import { RUBROS } from '../data/rubros';
+import { RUBROS } from '../constants/rubros';
 import { Language } from '../types';
 import { NicheProfile, Prospect, CampaignDraft, ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { StepProgress, StepNav, DanielGuideBubble } from './GuidedFlow';
