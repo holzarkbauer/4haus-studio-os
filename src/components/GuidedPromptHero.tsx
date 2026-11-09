@@ -432,13 +432,13 @@ export function GuidedPromptHero({
             {!userId && (
             <button
               type="button"
-              onClick={onOpenPlans}
+              onClick={() => window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'crear-web' }))}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                 isDark ? 'border-white/15 text-zinc-200 hover:bg-white/5' : 'border-black/[0.1] text-[#1D1D1F] hover:bg-black/[0.03]'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Start with 8,000 free credits' : 'Empieza con 8000 créditos gratis'}</span>
+              <span>{isEn ? 'Create your first mockup for free' : 'Crea tu primera maqueta gratis'}</span>
               <ArrowRight className="w-3 h-3" />
             </button>
             )}

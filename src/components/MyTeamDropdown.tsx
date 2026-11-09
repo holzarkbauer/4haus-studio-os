@@ -137,24 +137,6 @@ export function MyTeamDropdown({
         </button>
       </div>
 
-      {/* Credits Meter Bar */}
-      <div className="py-3 space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-zinc-900 dark:text-white font-mono">8000/8000</span>
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Créditos restantes</span>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-          <div className="w-full h-full bg-zinc-900 dark:bg-white rounded-full" />
-        </div>
-
-        <div className="flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-mono pt-1">
-          <span>oct 15, 2026</span>
-          <span>Próxima recarga de créditos</span>
-        </div>
-      </div>
-
       {/* Action Buttons: Actualizar & Ajustes */}
       <div className="grid grid-cols-2 gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
         <button
