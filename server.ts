@@ -11,6 +11,8 @@ import { claudeJsonClient } from './server/claudeJson.ts';
 import { registerSiteRoutes } from './server/sites.ts';
 import { registerLeadRoutes } from './server/leads.ts';
 import { registerAccessRoutes } from './server/access.ts';
+import { registerCrmRoutes } from './server/crm.ts';
+import { registerCrmSalesRoutes } from './server/crmSales.ts';
 import { hydrateWorkspace, persistWorkspace, storageMode } from './server/storage.ts';
 
 dotenv.config();
@@ -2377,6 +2379,8 @@ registerSiteRoutes(app, { read: (uid) => readWorkspace(uid), write: (data, uid) 
 registerLeadRoutes(app);
 // Códigos de acceso y Programa de creadores.
 registerAccessRoutes(app);
+registerCrmRoutes(app);
+registerCrmSalesRoutes(app);
 
 // Start Server with Vite Middleware in Development or Static in Production
 async function startServer() {

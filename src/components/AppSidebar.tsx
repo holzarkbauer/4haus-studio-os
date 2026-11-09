@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   KeyRound, 
+  KanbanSquare,
   Home, 
   Mic2, 
   Compass, 
@@ -83,6 +84,20 @@ export function AppSidebar({
   const t = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.es;
   const tContent = getWorkbenchTranslations(lang);
   const isDark = themeMode === 'dark';
+
+  // El CRM solo aparece para las cuentas del equipo de 4haus (lo decide el servidor).
+  const [isTeam, setIsTeam] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    fetch('/api/studio/admin/me')
+      .then((r) => (r.ok ? r.json() : { admin: false }))
+      .then((d) => !cancelled && setIsTeam(Boolean(d?.admin)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   return (
     <>
@@ -235,16 +250,13 @@ export function AppSidebar({
             // Una sola entrada: los pasos (negocio, CRM, campañas, landing, conexiones) son pestañas dentro.
             { id: 'growth-os', label: lang === 'en' ? 'Win clients' : 'Captar clientes', icon: Target },
             { id: 'creadores', label: lang === 'en' ? 'Creators' : 'Creadores', icon: KeyRound },
+            ...(isTeam ? [{ id: 'crm', label: 'CRM 4haus', icon: KanbanSquare }] : []),
           ].map((item) => {
             const Icon = item.icon;
-            const isActive = [
-              'growth-os',
-              'negocio-perfil',
-              'prospectos-crm',
-              'campanas-ia',
-              'landings-brief',
-              'conexiones-api',
-            ].includes(activeItem);
+            const isActive =
+              item.id === 'growth-os'
+                ? ['growth-os', 'negocio-perfil', 'prospectos-crm', 'campanas-ia', 'landings-brief', 'conexiones-api'].includes(activeItem)
+                : activeItem === item.id;
             return (
               <button
                 key={item.id}
@@ -276,8 +288,8 @@ export function AppSidebar({
           )}
 
           {[
-            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: undefined as string | undefined },
-            { id: 'store', label: t.store, icon: ShoppingBag, badge: undefined as string | undefined },
+            { id: 'ai-agents', label: t.aiAgents, icon: Bot, badge: (lang === 'en' ? 'Soon' : 'Pronto') as string | undefined },
+            { id: 'store', label: t.store, icon: ShoppingBag, badge: (lang === 'en' ? 'Soon' : 'Pronto') as string | undefined },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;

@@ -128,8 +128,8 @@ export function CreatorProgram({ lang, themeMode = 'light', userId, isLoggingIn,
         <h2 className={s.title}>{t('Programa de creadores', 'Creator program')}</h2>
         <p className={`${s.muted} max-w-2xl`}>
           {t(
-            'Crea webs con IA para tus clientes y gana en cada venta. Entras con un código de referido, una cuenta de Instagram y el compromiso de crear contenido.',
-            'Build AI websites for your clients and earn on every sale. You join with a referral code, an Instagram account and a commitment to create content.'
+            'Crea webs con IA para tus clientes y quédate con el 100% de cada venta. Entras con un código de referido, una cuenta de Instagram y el compromiso de crear contenido.',
+            'Build AI websites for your clients and keep 100% of every sale. You join with a referral code, an Instagram account and a commitment to create content.'
           )}
         </p>
       </div>
@@ -150,9 +150,9 @@ export function CreatorProgram({ lang, themeMode = 'light', userId, isLoggingIn,
           <p className={`text-xs ${s.faint}`}>{t('+ extras a elección (también al 50%).', '+ optional extras (also at 50%).')}</p>
         </div>
         <div className={`${s.card} p-5 space-y-3`}>
-          <h3 className={s.heading}>{t('Opción 2 · Suscripción + 50% de cada venta', 'Option 2 · Subscription + 50% of each sale')}</h3>
+          <h3 className={s.heading}>{t('Opción 2 · Suscripción mensual', 'Option 2 · Monthly subscription')}</h3>
           <p className={`text-sm ${s.muted}`}>
-            {t('Pagas poco cada mes. Cuando tu cliente paga por la plataforma, el 50% es para ti y el 50% para 4haus, y se quita la marca de agua.', 'Pay a small monthly fee. When your client pays through the platform, 50% is yours and 50% is 4haus, and the watermark is removed.')}
+            {t('Pagas un plan cada mes y creas las webs que tu plan permite. Lo que cobras a tu cliente es 100% tuyo.', 'Pay a monthly plan and build the websites it allows. What you charge your client is 100% yours.')}
           </p>
           <div className="flex flex-wrap gap-2">
             {PLANS.map((p) => (
@@ -162,6 +162,15 @@ export function CreatorProgram({ lang, themeMode = 'light', userId, isLoggingIn,
             ))}
           </div>
         </div>
+      </div>
+      <div className={`${s.card} p-5 -mt-4 space-y-1`}>
+        <h3 className={s.heading}>{t('Gana 10% por cada referido', 'Earn 10% per referral')}</h3>
+        <p className={`text-sm ${s.muted}`}>
+          {t(
+            'Cualquier persona puede recomendar el curso de 4haus (2.000 USD) o el modelo de negocio completo. Si tu referido compra con tu código, ganas el 10%. Se paga cuando completó su pago y venció su plazo de reembolso.',
+            'Anyone can recommend the 4haus course ($2,000) or the complete business model. If your referral buys with your code, you earn 10%. Paid once they complete payment and the refund period ends.',
+          )}
+        </p>
       </div>
       <p className={`text-xs -mt-6 ${s.faint}`}>{t('Los cobros con Mercado Pago se activan muy pronto.', 'Mercado Pago payments are coming very soon.')}</p>
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Copy, Check, RefreshCw, UserPlus, SlidersHorizontal } from 'lucide-react';
+import { Copy, Check, RefreshCw, UserPlus, SlidersHorizontal, Search, Loader2, ExternalLink } from 'lucide-react';
+import { RUBROS } from '../data/rubros';
 import { Language } from '../types';
 import { NicheProfile, Prospect, CampaignDraft, ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { StepProgress, StepNav, DanielGuideBubble } from './GuidedFlow';
@@ -36,6 +37,11 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
   // Paso 3: prospectos
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [newProspect, setNewProspect] = useState({ name: '', company: '', contact: '' });
+  // Buscar negocios en la web por rubro y ciudad (Claude + búsqueda web, solo con fuente).
+  const [finder, setFinder] = useState({ rubro: RUBROS[0], custom: '', city: '', quantity: 5 });
+  const [found, setFound] = useState<any[] | null>(null);
+  const [finding, setFinding] = useState(false);
+  const [added, setAdded] = useState<string[]>([]);
   // Paso 4: mensaje
   const [channel, setChannel] = useState<(typeof CHANNELS)[number]>('Email');
   const [objective, setObjective] = useState('');
@@ -102,8 +108,8 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
     },
     {
       message: isEn
-        ? 'Add the people or businesses you want to contact. Only contacts you know or who gave you permission.'
-        : 'Añade las personas o negocios a los que quieres escribir. Solo contactos que conoces o que te dieron permiso.',
+        ? 'Pick an industry and city to find real businesses, or add contacts you already know. Write only to the business channels they publish.'
+        : 'Elige un rubro y una ciudad para encontrar negocios reales, o añade contactos que ya conoces. Escribe solo a los canales que el negocio publica.',
       help: isEn ? 'Where can I find prospects for my business in an ethical way?' : '¿Dónde puedo encontrar prospectos para mi negocio de forma ética?',
     },
     {
@@ -199,6 +205,48 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
       setError((e as Error).message || (isEn ? 'Could not add the contact.' : 'No se pudo añadir el contacto.'));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function findBusinesses() {
+    setFinding(true);
+    setError(null);
+    setFound(null);
+    try {
+      const data = await call('/api/studio/prospects/search', {
+        rubro: finder.custom.trim() || finder.rubro,
+        city: finder.city.trim() || business.targetLocation.trim(),
+        quantity: finder.quantity,
+        idealClient: niche?.priorityAudience || business.targetAudience,
+      });
+      setFound(data.businesses || []);
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Search failed. Try again.' : 'No pude buscar. Inténtalo de nuevo.'));
+    } finally {
+      setFinding(false);
+    }
+  }
+
+  async function addFound(b: any) {
+    setError(null);
+    try {
+      const data = await call('/api/studio/prospects', {
+        prospect: {
+          name: b.name,
+          company: b.name,
+          socialHandle: b.instagram || b.website || undefined,
+          channel: b.phone ? 'WhatsApp' : 'Email',
+          niche: niche?.nicheName || b.rubro,
+          email: '',
+          location: b.city,
+          source: `Búsqueda web · ${b.sourceUrl}`,
+          recommendedAction: [b.whyFit, b.phone && `Tel.: ${b.phone}`, b.website && `Web: ${b.website}`].filter(Boolean).join(' · ') || undefined,
+        },
+      });
+      if (data.createdProspect) setProspects((prev) => [data.createdProspect, ...prev]);
+      setAdded((a) => [...a, b.sourceUrl + b.name]);
+    } catch (e) {
+      setError((e as Error).message || (isEn ? 'Could not add the contact.' : 'No se pudo añadir el contacto.'));
     }
   }
 
@@ -338,6 +386,61 @@ export function CaptarClientesFlow({ lang, themeMode = 'light', userId, preloadD
       {step === 2 && (
         <div className="space-y-5">
           <div className={`${panel} space-y-3`}>
+            <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{isEn ? 'Find businesses on the web' : 'Buscar negocios en la web'}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {RUBROS.map((r) => {
+                const on = !finder.custom && finder.rubro === r;
+                return (
+                  <button key={r} type="button" onClick={() => setFinder({ ...finder, rubro: r, custom: '' })} aria-pressed={on}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer ${on ? (isDark ? 'bg-white text-black border-white' : 'bg-[#1D1D1F] text-white border-[#1D1D1F]') : isDark ? 'border-white/15 text-zinc-300' : 'border-black/10 text-[#1D1D1F]'}`}>
+                    {r}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="grid sm:grid-cols-4 gap-3">
+              <input className={`${field} sm:col-span-2`} placeholder={isEn ? '…or another industry' : '…u otro rubro'} value={finder.custom}
+                onChange={(e) => setFinder({ ...finder, custom: e.target.value })} aria-label={isEn ? 'Other industry' : 'Otro rubro'} />
+              <input className={field} placeholder={business.targetLocation || (isEn ? 'City' : 'Ciudad')} value={finder.city}
+                onChange={(e) => setFinder({ ...finder, city: e.target.value })} aria-label={isEn ? 'City' : 'Ciudad'} />
+              <select className={field} value={finder.quantity} onChange={(e) => setFinder({ ...finder, quantity: Number(e.target.value) })} aria-label={isEn ? 'How many' : 'Cantidad'}>
+                {[3, 5, 10].map((n) => <option key={n} value={n}>{n} {isEn ? 'businesses' : 'negocios'}</option>)}
+              </select>
+            </div>
+            <button type="button" onClick={findBusinesses} disabled={finding || !(finder.city.trim() || business.targetLocation.trim())}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer disabled:opacity-40 ${isDark ? 'bg-white text-black' : 'bg-[#1D1D1F] text-white'}`}>
+              {finding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {finding ? (isEn ? 'Searching…' : 'Buscando…') : (isEn ? 'Find businesses' : 'Buscar negocios')}
+            </button>
+            <p className={`text-xs ${muted}`}>{isEn ? 'Only real businesses found in the search, with their source. Respect Do Not Call lists.' : 'Solo negocios reales encontrados en la búsqueda, con su fuente. Respeta las listas "No llamar" y "Gracias… No insista".'}</p>
+            {found && found.length === 0 && <p className={`text-sm ${muted}`}>{isEn ? 'No verified businesses found. Try another city or industry.' : 'No encontré negocios con fuente. Prueba otra ciudad o rubro.'}</p>}
+            {found && found.length > 0 && (
+              <ul className="space-y-2">
+                {found.map((b) => {
+                  const done = added.includes(b.sourceUrl + b.name);
+                  return (
+                    <li key={b.sourceUrl + b.name} className={`rounded-xl border p-3 flex items-start justify-between gap-3 ${isDark ? 'border-white/10' : 'border-black/[0.08]'}`}>
+                      <div className="min-w-0">
+                        <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{b.name}</div>
+                        {b.whyFit && <div className={`text-xs ${muted}`}>{b.whyFit}</div>}
+                        <div className={`text-xs mt-1 flex flex-wrap gap-x-3 ${muted}`}>
+                          {b.website && <span>{b.website}</span>}
+                          {b.phone && <span>{b.phone}</span>}
+                          <a href={b.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-1">{isEn ? 'Source' : 'Fuente'} <ExternalLink className="w-3 h-3" /></a>
+                        </div>
+                      </div>
+                      <button type="button" disabled={done} onClick={() => addFound(b)}
+                        className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer disabled:opacity-50 ${isDark ? 'bg-white/10 text-white' : 'bg-black/[0.05] text-[#1D1D1F]'}`}>
+                        {done ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />} {done ? (isEn ? 'Added' : 'Añadido') : (isEn ? 'Add' : 'Añadir')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <div className={`${panel} space-y-3`}>
+            <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{isEn ? 'Or add a contact you already know' : 'O añade un contacto que ya conoces'}</div>
             <div className="grid sm:grid-cols-3 gap-3">
               <input className={field} placeholder={isEn ? 'Name' : 'Nombre'} value={newProspect.name}
                 onChange={(e) => setNewProspect({ ...newProspect, name: e.target.value })} aria-label={isEn ? 'Name' : 'Nombre'} />

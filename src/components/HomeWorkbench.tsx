@@ -36,6 +36,8 @@ import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import { CaptarClientesFlow } from './CaptarClientesFlow';
 import { WebsiteStudio } from './WebsiteStudio';
 import { CreatorProgram } from './CreatorProgram';
+import { CrmApp } from './crm/CrmApp';
+import { motion } from 'motion/react';
 
 // Identificadores de "Captar clientes" (los antiguos siguen funcionando para Daniel y otros botones)
 const GROWTH_IDS = ['growth-os', 'negocio-perfil', 'prospectos-crm', 'campanas-ia', 'landings-brief', 'conexiones-api'];
@@ -191,7 +193,14 @@ export function HomeWorkbench({
     }`}>
       
       {/* Container with spacious padding */}
-      <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6 text-left">
+      {/* Cambio de sección suave: cada vista entra con un fundido y un desplazamiento corto. */}
+      <motion.div
+        key={GROWTH_IDS.includes(activeSidebarItem) ? 'growth' : activeSidebarItem || 'inicio'}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6 text-left"
+      >
         
         {/* =========================================================
             PRIMARY VIEW: INICIO (HOME)
@@ -615,7 +624,10 @@ export function HomeWorkbench({
           </div>
         )}
 
-      </div>
+        {/* CRM interno de 4haus (solo el equipo) */}
+        {activeSidebarItem === 'crm' && <CrmApp lang={lang} themeMode={themeMode} />}
+
+      </motion.div>
 
     </div>
   );
