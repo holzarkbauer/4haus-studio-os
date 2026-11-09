@@ -36,7 +36,7 @@ import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import { CaptarClientesFlow } from './CaptarClientesFlow';
 import { WebsiteStudio } from './WebsiteStudio';
 import { CreatorProgram } from './CreatorProgram';
-import { CrmApp } from './crm/CrmApp';
+import { AdminGate } from './crm/AdminGate';
 import { LegalPage } from './legal/LegalPage';
 import { motion } from 'motion/react';
 
@@ -631,7 +631,7 @@ export function HomeWorkbench({
         )}
 
         {/* CRM interno de 4haus (solo el equipo) */}
-        {activeSidebarItem === 'crm' && <CrmApp lang={lang} themeMode={themeMode} />}
+        {activeSidebarItem === 'crm' && <AdminGate lang={lang} themeMode={themeMode} userId={userId} isLoggingIn={isLoggingIn} onGoogleLogin={onGoogleLogin} />}
 
       </motion.div>
 

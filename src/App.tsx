@@ -112,6 +112,7 @@ export default function App() {
     if (p.startsWith('/creadores')) return 'creadores';
     if (p.startsWith('/condiciones')) return 'condiciones';
     if (p.startsWith('/terminos-creadores')) return 'terminos';
+    if (p === '/admin' || p.startsWith('/admin/')) return 'crm'; // 4haus.us/admin = backoffice
     return 'inicio';
   });
 
@@ -148,7 +149,7 @@ export default function App() {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       // 4haus.us/creadores abre directamente el Programa de creadores (enlace para Instagram).
-      if (path.includes('/app') || path.startsWith('/creadores') || path.startsWith('/condiciones') || path.startsWith('/terminos-creadores') || hash === '#app') {
+      if (path.includes('/app') || path.startsWith('/creadores') || path.startsWith('/condiciones') || path.startsWith('/terminos-creadores') || path === '/admin' || path.startsWith('/admin/') || hash === '#app') {
         return 'app';
       }
     }
