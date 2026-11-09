@@ -25,6 +25,18 @@ interface HomeTemplate {
 // Orden de la galería: primero las portadas 3D premium.
 export const HOME_TEMPLATES: HomeTemplate[] = [
   {
+    id: 'casa-de-cristal',
+    category: 'premium3d',
+    name: { es: 'Casa de cristal (scroll 3D)', en: 'Glass house (3D scroll)' },
+    description: { es: 'Módulos 3D que cambian de forma en cada sección', en: '3D modules that change shape in each section' },
+    image: '/templates/thumbs/home-4haus-cristal.jpg',
+    liveUrl: '/templates/home-4haus-cristal.html',
+    prompt: {
+      es: 'Crea una web inmersiva con scroll 3D para mi negocio. Fondo oscuro, tipografía grande, y un objeto protagonista hecho de módulos de cristal (cubos con three.js) que cambia de forma en cada sección: primero representa mi marca, luego cada servicio (por ejemplo embudo, pantalla, red, esfera). Los titulares aparecen con un efecto de texto que se descifra. Al final, una sección de enlaces donde partículas forman la palabra del enlace al pasar el cursor. Incluye servicios, un caso real [del cliente] y llamada a la acción.',
+      en: 'Create an immersive 3D-scroll website for my business. Dark background, large type, and a hero object made of glass modules (three.js cubes) that changes shape in each section: first my brand, then each service (e.g. funnel, screen, network, sphere). Headlines appear with a decoding text effect. At the end, a links section where particles form the link word on hover. Include services, a [client] real case and a call to action.',
+    },
+  },
+  {
     id: 'estudio-creativo-3d',
     category: 'premium3d',
     name: { es: 'Estudio creativo con portada 3D', en: 'Creative studio with 3D hero' },
