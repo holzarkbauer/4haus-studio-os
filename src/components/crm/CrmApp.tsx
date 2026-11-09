@@ -28,6 +28,7 @@ import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
 import { RUBROS } from '../../constants/rubros';
 import { SalesView, ProposalsView } from './SalesViews';
+import { DocsView } from './DocsView';
 
 // CRM interno de 4haus (solo el equipo). Empieza vacío y se llena con datos reales:
 // solicitudes de llamada, pedidos de código, códigos canjeados y negocios buscados.
@@ -76,7 +77,7 @@ const STAGES: Record<Kind, { id: string; es: string; en: string }[]> = {
 
 
 
-type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar' | 'ventas' | 'propuestas';
+type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar' | 'ventas' | 'propuestas' | 'documentos';
 
 interface Props {
   lang: Language;
@@ -139,7 +140,7 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
     { group: t('Clientes', 'Clients'), items: [{ id: 'pipeline', label: 'Pipeline', icon: KanbanSquare }, { id: 'buscar', label: t('Buscar clientes', 'Find clients'), icon: Search }] },
     { group: t('Ventas', 'Sales'), items: [{ id: 'ventas', label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet }, { id: 'propuestas', label: t('Propuestas', 'Proposals'), icon: FileSignature }] },
     { group: 'Marketing', items: [{ label: t('Campañas', 'Campaigns'), icon: Megaphone }, { label: t('Agenda', 'Calendar'), icon: CalendarDays }] },
-    { group: t('Equipo', 'Team'), items: [{ label: t('Colaboradores', 'Collaborators'), icon: Briefcase }, { label: t('Documentos y firmas', 'Documents & signatures'), icon: FileText }] },
+    { group: t('Equipo', 'Team'), items: [{ label: t('Colaboradores', 'Collaborators'), icon: Briefcase }, { id: 'documentos', label: t('Documentos', 'Documents'), icon: FileText }] },
   ];
   const current = nav.flatMap((g) => g.items).find((i) => i.id === tab);
   const border = isDark ? 'border-white/10' : 'border-black/[0.08]';
@@ -258,6 +259,8 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
                 <Panel contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} onGo={setTab} />
               ) : tab === 'leads' ? (
                 <Leads contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} q={globalQuery} setQ={setGlobalQuery} />
+              ) : tab === 'documentos' ? (
+                <DocsView isDark={isDark} t={t} L={L} />
               ) : tab === 'ventas' ? (
                 <SalesView isDark={isDark} t={t} L={L} />
               ) : tab === 'propuestas' ? (

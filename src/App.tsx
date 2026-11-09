@@ -106,9 +106,14 @@ export default function App() {
   const [isBooksOpen, setIsBooksOpen] = useState(false);
 
   // Studio OS Home Page & Modals state
-  const [activeSidebarItem, setActiveSidebarItem] = useState<string>(() =>
-    typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/creadores') ? 'creadores' : 'inicio'
-  );
+  const [activeSidebarItem, setActiveSidebarItem] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'inicio';
+    const p = window.location.pathname.toLowerCase();
+    if (p.startsWith('/creadores')) return 'creadores';
+    if (p.startsWith('/condiciones')) return 'condiciones';
+    if (p.startsWith('/terminos-creadores')) return 'terminos';
+    return 'inicio';
+  });
 
   // Otras pantallas pueden pedir ir a una sección: window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'creadores' })).
   useEffect(() => {
@@ -143,7 +148,7 @@ export default function App() {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       // 4haus.us/creadores abre directamente el Programa de creadores (enlace para Instagram).
-      if (path.includes('/app') || path.startsWith('/creadores') || hash === '#app') {
+      if (path.includes('/app') || path.startsWith('/creadores') || path.startsWith('/condiciones') || path.startsWith('/terminos-creadores') || hash === '#app') {
         return 'app';
       }
     }

@@ -172,7 +172,18 @@ export function CreatorProgram({ lang, themeMode = 'light', userId, isLoggingIn,
           )}
         </p>
       </div>
-      <p className={`text-xs -mt-6 ${s.faint}`}>{t('Los cobros con Mercado Pago se activan muy pronto.', 'Mercado Pago payments are coming very soon.')}</p>
+      <p className={`text-xs -mt-6 ${s.faint}`}>
+        {t('Los cobros con Mercado Pago se activan muy pronto.', 'Mercado Pago payments are coming very soon.')}{' '}
+        {t('Antes de unirte, lee los', 'Before joining, read the')}{' '}
+        <a href="/terminos-creadores" className="underline" onClick={(e) => { e.preventDefault(); window.history.pushState(null, '', '/terminos-creadores'); window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'terminos' })); }}>
+          {t('Términos del Programa de creadores', 'Creator Program terms')}
+        </a>{' '}
+        {t('y las', 'and the')}{' '}
+        <a href="/condiciones" className="underline" onClick={(e) => { e.preventDefault(); window.history.pushState(null, '', '/condiciones'); window.dispatchEvent(new CustomEvent('4haus:navigate', { detail: 'condiciones' })); }}>
+          {t('Condiciones de venta del curso', 'course sales terms')}
+        </a>
+        .
+      </p>
 
       {profile ? (
         <div className={`${s.card} p-5 flex items-start gap-3`}>

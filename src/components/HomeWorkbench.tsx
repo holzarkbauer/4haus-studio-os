@@ -37,6 +37,7 @@ import { CaptarClientesFlow } from './CaptarClientesFlow';
 import { WebsiteStudio } from './WebsiteStudio';
 import { CreatorProgram } from './CreatorProgram';
 import { CrmApp } from './crm/CrmApp';
+import { LegalPage } from './legal/LegalPage';
 import { motion } from 'motion/react';
 
 // Identificadores de "Captar clientes" (los antiguos siguen funcionando para Daniel y otros botones)
@@ -354,6 +355,11 @@ export function HomeWorkbench({
               onUseTemplatePrompt={(prompt) => startWebsite(prompt)}
             />
           </div>
+        )}
+
+        {/* DOCUMENTOS PÚBLICOS: condiciones de venta y términos de creadores (4haus.us/condiciones) */}
+        {(activeSidebarItem === 'condiciones' || activeSidebarItem === 'terminos') && (
+          <LegalPage docId={activeSidebarItem === 'condiciones' ? 'condiciones-venta' : 'terminos-creadores'} isDark={isDark} lang={lang === 'en' ? 'en' : 'es'} />
         )}
 
         {/* PROGRAMA DE CREADORES: pedir y canjear códigos; aprobación del administrador */}
