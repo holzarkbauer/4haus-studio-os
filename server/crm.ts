@@ -64,7 +64,7 @@ function adminUids(): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
-const isAdmin = (req: Request) => Boolean(req.auth?.verified && req.auth.uid && adminUids().includes(req.auth.uid));
+export const isAdmin = (req: Request) => Boolean(req.auth?.verified && req.auth.uid && adminUids().includes(req.auth.uid));
 
 function readJson<T>(file: string, fallback: T): T {
   try {

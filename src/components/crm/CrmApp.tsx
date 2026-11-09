@@ -27,6 +27,7 @@ import {
 import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
 import { RUBROS } from '../../data/rubros';
+import { SalesView, ProposalsView } from './SalesViews';
 
 // CRM interno de 4haus (solo el equipo). Empieza vacío y se llena con datos reales:
 // solicitudes de llamada, pedidos de código, códigos canjeados y negocios buscados.
@@ -75,7 +76,7 @@ const STAGES: Record<Kind, { id: string; es: string; en: string }[]> = {
 
 
 
-type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar';
+type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar' | 'ventas' | 'propuestas';
 
 interface Props {
   lang: Language;
@@ -136,7 +137,7 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
   const nav: { group: string; items: NavItem[] }[] = [
     { group: 'General', items: [{ id: 'panel', label: t('Panel', 'Dashboard'), icon: LayoutDashboard }, { id: 'leads', label: t('Leads (todos)', 'Leads (all)'), icon: Users }] },
     { group: t('Clientes', 'Clients'), items: [{ id: 'pipeline', label: 'Pipeline', icon: KanbanSquare }, { id: 'buscar', label: t('Buscar clientes', 'Find clients'), icon: Search }] },
-    { group: t('Ventas', 'Sales'), items: [{ label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet }, { label: t('Propuestas', 'Proposals'), icon: FileSignature }] },
+    { group: t('Ventas', 'Sales'), items: [{ id: 'ventas', label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet }, { id: 'propuestas', label: t('Propuestas', 'Proposals'), icon: FileSignature }] },
     { group: 'Marketing', items: [{ label: t('Campañas', 'Campaigns'), icon: Megaphone }, { label: t('Agenda', 'Calendar'), icon: CalendarDays }] },
     { group: t('Equipo', 'Team'), items: [{ label: t('Colaboradores', 'Collaborators'), icon: Briefcase }, { label: t('Documentos y firmas', 'Documents & signatures'), icon: FileText }] },
   ];
@@ -257,6 +258,10 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
                 <Panel contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} onGo={setTab} />
               ) : tab === 'leads' ? (
                 <Leads contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} q={globalQuery} setQ={setGlobalQuery} />
+              ) : tab === 'ventas' ? (
+                <SalesView isDark={isDark} t={t} L={L} />
+              ) : tab === 'propuestas' ? (
+                <ProposalsView isDark={isDark} t={t} L={L} />
               ) : tab === 'pipeline' ? (
                 <Pipeline contacts={contacts} isDark={isDark} t={t} L={L} onOpen={setEditing} onMove={(c, stage) => save({ id: c.id, kind: c.kind, stage })} />
               ) : (
