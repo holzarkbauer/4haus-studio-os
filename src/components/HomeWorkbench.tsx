@@ -29,12 +29,16 @@ import { Language } from '../types';
 import { UI_TRANSLATIONS } from '../i18n/languages';
 import { getWorkbenchTranslations } from '../i18n/workbenchTranslations';
 import { GuidedPromptHero, GuidedMessage } from './GuidedPromptHero';
+import type { StartExtras } from './GuidedPromptHero';
 import { LeadNichoEngine, GrowthStepId } from './LeadNichoEngine';
 import { ProjectPreloadPayload } from '../types/leadNichoTypes';
 import { UserDashboard } from './UserDashboard';
 import { HomeTemplatesShowcase } from './HomeTemplatesShowcase';
 import { CaptarClientesFlow } from './CaptarClientesFlow';
 import { WebsiteStudio } from './WebsiteStudio';
+import { LibraryTemplates } from './website/LibraryTemplates';
+import { VoiceStudio } from './VoiceStudio';
+import { UserHistory } from './UserHistory';
 import { CreatorProgram } from './CreatorProgram';
 import { AdminGate } from './crm/AdminGate';
 import { LegalPage } from './legal/LegalPage';
@@ -122,8 +126,12 @@ export function HomeWorkbench({
   const [showAdvancedGrowth, setShowAdvancedGrowth] = useState(false);
   // Pedido pendiente para el creador de webs (desde la casilla del inicio o una plantilla).
   const [webBrief, setWebBrief] = useState<string | null>(null);
-  const startWebsite = (brief: string) => {
-    setWebBrief(brief);
+  const [webExtras, setWebExtras] = useState<StartExtras | null>(null);
+  const [webTemplate, setWebTemplate] = useState<string | null>(null);
+  const startWebsite = (brief: string, extras?: StartExtras) => {
+    setWebExtras(extras || null);
+    // Con solo adjuntos (sin texto), se usa un pedido mínimo para que arranque igual.
+    setWebBrief(brief || (extras && (extras.attachments.length || extras.images.length) ? 'Crea la web a partir de los adjuntos.' : brief));
     onSelectSidebarItem('crear-web');
   };
   useEffect(() => {
@@ -160,32 +168,6 @@ export function HomeWorkbench({
       setPreloadData({ ...incomingPreload });
     }
     onSelectSidebarItem(sidebarItem);
-  };
-
-  // Voice synthesis state for 'voz' tab
-  const [voiceText, setVoiceText] = useState(tContent.generationHistory.sampleText);
-  const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [selectedVoiceModel, setSelectedVoiceModel] = useState('daniel-prime');
-
-  // Update sample text when language changes
-  useEffect(() => {
-    setVoiceText(tContent.generationHistory.sampleText);
-  }, [lang, tContent.generationHistory.sampleText]);
-
-  const handleTestVoice = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('Tu navegador no soporta síntesis de voz.');
-      return;
-    }
-    window.speechSynthesis.cancel();
-    setIsSynthesizing(true);
-    const utterance = new SpeechSynthesisUtterance(voiceText);
-    utterance.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'zh' ? 'zh-CN' : 'es-ES';
-    utterance.pitch = 0.85;
-    utterance.rate = 1.0;
-    utterance.onend = () => setIsSynthesizing(false);
-    utterance.onerror = () => setIsSynthesizing(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   return (
@@ -235,87 +217,9 @@ export function HomeWorkbench({
           </div>
         )}
 
-        {/* VIEW 2: VOZ PERSONALIZADA (Custom Voice Synthesis) */}
+        {/* VOZ: voz real con ElevenLabs (la clave vive solo en el servidor) */}
         {activeSidebarItem === 'voz' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono uppercase text-indigo-600 font-semibold mb-1">
-                <Mic2 className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Audio Synthesis Studio' : 'Estudio de Síntesis de Voz'}</span>
-              </div>
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                {lang === 'en' ? 'Custom Voice Engine' : 'Voz Personalizada'}
-              </h2>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {lang === 'en' 
-                  ? 'Real-time bilingual speech synthesis calibrated with neural voice models.' 
-                  : 'Síntesis de voz bilingüe en tiempo real calibrada con modelos neuronales.'}
-              </p>
-            </div>
-
-            <div className={`p-6 rounded-3xl border shadow-xs space-y-5 ${
-              isDark ? 'bg-zinc-900/90 border-zinc-800' : 'bg-white border-zinc-200'
-            }`}>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { id: 'daniel-prime', name: 'Daniel 1.0 (Executive)', tag: 'K.I.T.T. Neural' },
-                  { id: 'atlas-deep', name: 'Atlas Deep (Architect)', tag: 'Resonant Baritone' },
-                  { id: 'nova-clarity', name: 'Nova Studio (Concise)', tag: 'Bilingual Pitch' },
-                ].map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setSelectedVoiceModel(v.id)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                      selectedVoiceModel === v.id
-                        ? isDark 
-                          ? 'border-indigo-500 bg-indigo-950/40 text-white' 
-                          : 'border-indigo-600 bg-indigo-50/50 text-zinc-900'
-                        : isDark
-                          ? 'border-zinc-800 bg-zinc-850 hover:border-zinc-700 text-zinc-300'
-                          : 'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-800'
-                    }`}
-                  >
-                    <div className="text-xs font-bold">{v.name}</div>
-                    <div className="text-[10px] font-mono text-indigo-500 mt-0.5">{v.tag}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div>
-                <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                  {lang === 'en' ? 'Prompt Text to Synthesize' : 'Texto para Síntesis en Vivo'}
-                </label>
-                <textarea
-                  rows={4}
-                  value={voiceText}
-                  onChange={(e) => setVoiceText(e.target.value)}
-                  className={`w-full rounded-2xl border p-4 text-xs focus:outline-none resize-none transition-colors ${
-                    isDark 
-                      ? 'border-zinc-800 bg-zinc-950 text-white focus:border-zinc-600' 
-                      : 'border-zinc-200 bg-zinc-50/50 text-zinc-900 focus:border-zinc-400'
-                  }`}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                  {lang === 'en' ? 'Engine: Web Speech Neural Bridge' : 'Motor: Web Speech Neural Bridge'}
-                </div>
-                <button
-                  onClick={handleTestVoice}
-                  disabled={isSynthesizing}
-                  className="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-black text-white font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>
-                    {isSynthesizing 
-                      ? (lang === 'en' ? 'Synthesizing...' : 'Sintetizando...') 
-                      : (lang === 'en' ? 'Test Live Voice' : 'Probar Voz en Vivo')}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <VoiceStudio isDark={isDark} isEn={lang === 'en'} userId={userId} onGoogleLogin={onGoogleLogin} />
         )}
 
         {/* VIEW 3: PLANTILLAS (une la antigua Websites Library y la galería del Landing Builder) */}
@@ -348,6 +252,15 @@ export function HomeWorkbench({
               </button>
             </div>
 
+            <LibraryTemplates
+              isDark={isDark}
+              isEn={lang === 'en'}
+              onUse={(id) => {
+                setWebTemplate(id);
+                onSelectSidebarItem('crear-web');
+              }}
+            />
+
             <HomeTemplatesShowcase
               lang={lang}
               themeMode={themeMode}
@@ -376,69 +289,25 @@ export function HomeWorkbench({
             isLoggingIn={isLoggingIn}
             onGoogleLogin={onGoogleLogin}
             startBrief={webBrief}
-            onStartConsumed={() => setWebBrief(null)}
+            onStartConsumed={() => {
+              setWebBrief(null);
+              setWebExtras(null);
+            }}
+            startExtras={webExtras}
+            startTemplateId={webTemplate}
+            onOpenPlans={onOpenPlans}
           />
         )}
 
-        {/* VIEW 4: AI AGENTS */}
+        {/* AGENTES DE IA: aún en construcción (no se muestran agentes que no existen) */}
         {activeSidebarItem === 'ai-agents' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono uppercase text-indigo-600 font-semibold mb-1">
-                <Bot className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Autonomous Swarms' : 'Enjambres Autónomos'}</span>
-              </div>
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                {lang === 'en' ? 'AI Agents' : 'Agentes de IA'}
-              </h2>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {lang === 'en'
-                  ? 'Deploy autonomous copilots for lead capture, CRM synchronization, and client support.'
-                  : 'Despliega copilotos autónomos para captura de leads, sincronización de CRM y soporte a clientes.'}
-              </p>
+          <div className="max-w-3xl space-y-3">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{lang === 'en' ? 'AI agents' : 'Agentes de IA'}</h2>
+            <div className={`p-6 rounded-3xl border text-sm ${isDark ? 'bg-zinc-900/80 border-zinc-800 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-600'}`}>
+              {lang === 'en'
+                ? 'Coming soon: agents that answer your clients on WhatsApp and book appointments. Meanwhile, every website you create can include its contact form and booking button.'
+                : 'Muy pronto: agentes que responden a tus clientes por WhatsApp y agendan citas. Mientras tanto, cada web que crees puede incluir su formulario de contacto y botón para agendar.'}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { name: 'Daniel 1.0 (Executive Brain)', desc: 'Autonomous sales qualification, audio bridge, and calendar booking.', status: 'Active 99.9%' },
-                { name: 'Atlas Inbound Concierge', desc: 'WhatsApp & Telegram webhook router with 45-second latency.', status: 'Ready' },
-                { name: 'Sentinel Lead Auditor', desc: 'Automated CRM data cleansing and customer enrichment pipeline.', status: 'Standby' },
-                { name: 'K.I.T.T. Voice Dispatcher', desc: 'Real-time two-way voice assistant calibrated for high-ticket consultations.', status: 'Active' },
-              ].map((agent, i) => (
-                <div key={i} className={`p-5 rounded-2xl border shadow-2xs space-y-3 ${
-                  isDark ? 'bg-zinc-900/90 border-zinc-800' : 'bg-white border-zinc-200'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{agent.name}</span>
-                    <span className="text-[10px] font-mono text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-full font-medium">
-                      {agent.status}
-                    </span>
-                  </div>
-                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{agent.desc}</p>
-                  <button
-                    onClick={onOpenDanielModal}
-                    className="text-xs font-semibold text-indigo-500 hover:text-indigo-400 flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{lang === 'en' ? 'Launch Agent Interface' : 'Abrir Interfaz de Agente'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <LeadNichoEngine
-              lang={lang}
-              themeMode={themeMode}
-              initialStep="paso7-agentes"
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              preloadData={preloadData}
-              onOpenDanielModal={onOpenDanielModal}
-              onOpenTutorialsModal={onOpenTutorials}
-              onOpenBooksModal={onOpenBooksModal}
-              onOpenLivePreview={onOpenLivePreview}
-            />
           </div>
         )}
 
@@ -544,36 +413,7 @@ export function HomeWorkbench({
 
         {/* VIEW 7: HISTORIA DE USUARIO */}
         {activeSidebarItem === 'historia' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div>
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                {lang === 'en' ? 'User History' : 'Historia de usuario'}
-              </h2>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {lang === 'en' ? 'Chronological timeline of your creations, audio generations, and deployments.' : 'Cronología de todo lo que has ido creando y generando hasta el momento.'}
-              </p>
-            </div>
-
-            <div className={`p-6 rounded-3xl border space-y-4 shadow-2xs ${
-              isDark ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white border-zinc-200'
-            }`}>
-              {[
-                { time: '09-17 20:30', title: 'Generación de Voz Sintética', desc: 'Asistente Robótico Clásico • Modelo K.I.T.T. Neural' },
-                { time: '09-17 18:45', title: 'Creación de Website', desc: 'Despliegue de página de Inicio con Canvas Blanco y Copiloto Daniel' },
-                { time: '09-17 16:12', title: 'Calibración de Daniel 1.0', desc: 'Sincronización de motor neural y túnel de audio con Spotify' },
-              ].map((item, idx) => (
-                <div key={idx} className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                  isDark ? 'bg-zinc-850 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
-                }`}>
-                  <div>
-                    <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{item.title}</div>
-                    <div className="text-[11px] text-zinc-400">{item.desc}</div>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-400">{item.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <UserHistory isDark={isDark} isEn={lang === 'en'} onOpenWebsites={() => onSelectSidebarItem('crear-web')} />
         )}
 
         {/* VIEW 9a: CAPTAR CLIENTES · paso a paso guiado por Daniel (vista por defecto) */}

@@ -19,6 +19,7 @@ const ANON_ID = /^anon_[a-z0-9]{6,40}$/i;
 const PAID_ROUTES = [
   '/api/studio/daniel',
   '/api/studio/daniel-tts',
+  '/api/studio/voice/tts',
   '/api/studio/generate-niche',
   '/api/studio/generate-campaign',
   '/api/studio/landing-drafts',
@@ -91,7 +92,7 @@ export function registerAuth(app: Express, onVerified?: (workspaceId: string) =>
     const paidProspects =
       fullPath === '/api/studio/prospects' && ['search_real_prospects', 'generate_demo_batch'].includes(action);
     if (!info.verified && (isPaidRoute(fullPath) || paidProspects)) {
-      return deny(res, 401, 'Inicia sesión con Google para usar la IA. Incluye 8000 créditos gratis.');
+      return deny(res, 401, 'Inicia sesión con Google para usar esta función.');
     }
 
     // La voz maestra de Daniel es compartida por todos: solo un administrador puede cambiarla.

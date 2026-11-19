@@ -18,6 +18,7 @@ import { askDaniel } from './GuidedFlow';
 import { HOME_TEMPLATES } from './HomeTemplatesShowcase';
 import { PackagesModal } from './PackagesModal';
 import { getWorkspaceId } from '../utils/workspaceId';
+import { WebComposer, type ComposerPayload, type StudioTemplateCard, type SiteLevel } from './website/WebComposer';
 
 const GUEST_SITES_KEY = '4haus_guest_sites';
 function readGuestSites(): string[] {
@@ -50,6 +51,11 @@ interface SiteView {
   brief: string;
   status: 'generating' | 'editing' | 'ready' | 'error';
   error?: string;
+  errorCode?: string;
+  adminError?: string;
+  adminAction?: { label: string; url: string };
+  canRetry?: boolean;
+  level?: SiteLevel;
   changes: SiteChange[];
   paid: boolean;
   sample?: boolean;
@@ -75,17 +81,35 @@ interface WebsiteStudioProps {
   /** Texto que llega desde la casilla del inicio o una plantilla: arranca la creación. */
   startBrief?: string | null;
   onStartConsumed?: () => void;
+  /** Plantilla de la biblioteca elegida desde la sección Plantillas. */
+  startTemplateId?: string | null;
+  /** Adjuntos que vienen desde la casilla del inicio. */
+  startExtras?: { attachments: ComposerPayload['attachments']; images: ComposerPayload['images'] } | null;
+  /** Abre los planes (cuando se acaban los créditos de la prueba). */
+  onOpenPlans?: () => void;
+}
+
+interface CreditInfo {
+  unlimited: boolean;
+  total: number;
+  left: number;
+  endsAt: string | null;
+  expired: boolean;
+  overBudget: boolean;
 }
 
 const STEPS = { es: ['Describe', 'Maqueta', 'Ajustes', 'Descarga'], en: ['Describe', 'Mockup', 'Tweaks', 'Download'] };
 
-export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, onGoogleLogin, startBrief, onStartConsumed }: WebsiteStudioProps) {
+export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, onGoogleLogin, startBrief, onStartConsumed, startTemplateId, startExtras, onOpenPlans }: WebsiteStudioProps) {
   const isDark = themeMode === 'dark';
   const isEn = lang === 'en';
   const s = ui(isDark);
   const t = (es: string, en: string) => (isEn ? en : es);
 
-  const [brief, setBrief] = useState('');
+  const [prefill, setPrefill] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<StudioTemplateCard[]>([]);
+  const [credits, setCredits] = useState<CreditInfo | null>(null);
+  const [upgrade, setUpgrade] = useState<string | null>(null);
   const [sites, setSites] = useState<SiteEntry[]>([]);
   const [limits, setLimits] = useState<{ generationsLeft: number; editsLeft: number } | null>(null);
   const [aiReady, setAiReady] = useState(true);
@@ -116,6 +140,7 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
       const data = await res.json();
       setSites(Array.isArray(data.sites) ? data.sites : []);
       setLimits(data.limits || null);
+      setCredits(data.credits || null);
       setAiReady(Boolean(data.aiReady));
     } catch {
       /* sin conexión: la lista queda vacía */
@@ -125,6 +150,14 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  // Biblioteca de plantillas que el equipo agrega desde el CRM.
+  useEffect(() => {
+    fetch('/api/studio/templates')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setTemplates(Array.isArray(d?.templates) ? d.templates : []))
+      .catch(() => setTemplates([]));
+  }, []);
 
   useEffect(() => {
     if (!userId) return setLeads(null);
@@ -155,27 +188,32 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
     };
   }, [site?.id, working, loadList]);
 
-  async function create(text: string) {
-    const clean = text.trim();
-    if (!clean || busy) return;
+  async function create(payload: ComposerPayload) {
+    if (busy) return;
     setBusy(true);
     setError(null);
     setNotice(null);
+    setUpgrade(null);
     try {
       const res = await fetch('/api/studio/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief: clean }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const msg = await readError(res, t('No pude empezar tu web.', 'Could not start your website.'));
+        const data: any = await res.json().catch(() => ({}));
+        const msg = String(data.error || t('No pude empezar tu web.', 'Could not start your website.'));
+        if (data.upgradeRequired) {
+          setUpgrade(msg);
+          return;
+        }
         if (res.status === 403 || res.status === 429) setShowPackages(!userId);
         throw new Error(msg);
       }
       const data = await res.json();
       setSite(data.site);
       if (!userId && data.site?.id) rememberGuestSite(data.site.id);
-      setBrief('');
+      setPrefill(null);
       loadList();
     } catch (e) {
       setError((e as Error).message);
@@ -184,10 +222,34 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
     }
   }
 
+  async function retry(level?: SiteLevel) {
+    if (!site || busy) return;
+    setBusy(true);
+    setError(null);
+    setUpgrade(null);
+    try {
+      const res = await fetch(`/api/studio/sites/${site.id}/retry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(level ? { level } : {}),
+      });
+      const data: any = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data.upgradeRequired) setUpgrade(String(data.error));
+        else setError(String(data.error || t('No pude reintentar.', 'Could not retry.')));
+        return;
+      }
+      setSite(data.site);
+      loadList();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Si llega un pedido desde el inicio o una plantilla, se arranca solo (con sesión).
   useEffect(() => {
     if (!startBrief) return;
-    create(startBrief);
+    create({ brief: startBrief, level: 'completa', templateId: startTemplateId || undefined, attachments: startExtras?.attachments || [], images: startExtras?.images || [] });
     onStartConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startBrief, userId]);
@@ -340,42 +402,41 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           </div>
         )}
 
-        <div className={`${s.card} p-4 space-y-3`}>
-          <label htmlFor="ws-brief" className="sr-only">
-            {t('Describe tu web', 'Describe your website')}
-          </label>
-          <textarea
-            id="ws-brief"
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
-            rows={5}
-            placeholder={t(
-              'Ej. Web para una cafetería de especialidad en Miraflores. Portada oscura con una taza 3D que gira al hacer scroll, menú, horarios y botón para reservar.',
-              'E.g. Website for a specialty coffee shop. Dark hero with a 3D cup that rotates on scroll, menu, hours and a booking button.'
-            )}
-            className={`${s.input} resize-none border-0 px-1 focus:border-0`}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className={`text-xs ${s.faint}`}>
-              {guest
-                ? t('Tu primera maqueta es gratis, sin registro.', 'Your first mockup is free, no sign-up.')
-                : limits
-                ? t(`Te quedan ${limits.generationsLeft} webs nuevas hoy`, `${limits.generationsLeft} new websites left today`)
-                : ''}
-            </span>
-            <button type="button" onClick={() => create(brief)} disabled={busy || brief.trim().length < 15 || !aiReady} className={s.primaryButton}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {t('Crear maqueta', 'Create mockup')}
+        <WebComposer
+          isDark={isDark}
+          isEn={isEn}
+          guest={guest}
+          busy={busy}
+          disabled={!aiReady}
+          creditsLeft={guest ? null : credits && !credits.unlimited ? credits.left : null}
+          templates={templates}
+          initialTemplateId={startTemplateId}
+          prefill={prefill}
+          onSubmit={create}
+        />
+        {!guest && credits && !credits.unlimited && (
+          <p className={`text-xs ${s.faint}`}>
+            {credits.endsAt
+              ? t(`Prueba: ${credits.left} de ${credits.total} créditos · vence el ${new Date(credits.endsAt).toLocaleDateString('es-PE')}`, `Trial: ${credits.left} of ${credits.total} credits · ends ${new Date(credits.endsAt).toLocaleDateString('en-US')}`)
+              : t(`Prueba de 7 días: ${credits.total} créditos (empiezan a contar con tu primera web)`, `7-day trial: ${credits.total} credits (start counting with your first website)`)}
+          </p>
+        )}
+        {guest && <p className={`text-xs ${s.faint}`}>{t('Tu primera maqueta es gratis, sin registro.', 'Your first mockup is free, no sign-up.')}</p>}
+        {upgrade && (
+          <div className={`${s.card} p-4 space-y-3`} role="alert">
+            <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{upgrade}</p>
+            <button type="button" onClick={() => (onOpenPlans ? onOpenPlans() : setShowPackages(true))} className={s.primaryButton}>
+              {t('Mejorar mi plan', 'Upgrade my plan')}
             </button>
           </div>
-        </div>
+        )}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="space-y-3">
           <h3 className={s.heading}>{t('Empieza desde una plantilla', 'Start from a template')}</h3>
           <div className="flex flex-wrap gap-2">
             {HOME_TEMPLATES.map((tpl) => (
-              <button key={tpl.id} type="button" onClick={() => setBrief(tpl.prompt[isEn ? 'en' : 'es'])} className={s.chip(false)}>
+              <button key={tpl.id} type="button" onClick={() => setPrefill(tpl.prompt[isEn ? 'en' : 'es'])} className={s.chip(false)}>
                 {tpl.name[isEn ? 'en' : 'es']}
               </button>
             ))}
@@ -462,6 +523,25 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
           )}
           {site.status === 'editing' && <p className={s.muted}>{t('Aplicando tu cambio…', 'Applying your change…')}</p>}
           {site.status === 'error' && <p className="text-red-600">{site.error}</p>}
+          {site.adminError && (
+            <div className={`rounded-xl p-3 space-y-2 ${s.soft}`}>
+              <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{t('Motivo exacto (solo lo ves tú, como administrador)', 'Exact reason (admin only)')}</p>
+              <p className={`text-xs ${s.muted}`}>{site.adminError}</p>
+              {site.adminAction && (
+                <a href={site.adminAction.url} target="_blank" rel="noopener noreferrer" className={s.primaryButton}>
+                  {site.adminAction.label}
+                </a>
+              )}
+            </div>
+          )}
+          {upgrade && (
+            <div className={`rounded-xl p-3 space-y-2 ${s.soft}`} role="alert">
+              <p className={`text-xs font-medium ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`}>{upgrade}</p>
+              <button type="button" onClick={() => (onOpenPlans ? onOpenPlans() : setShowPackages(true))} className={s.primaryButton}>
+                {t('Mejorar mi plan', 'Upgrade my plan')}
+              </button>
+            </div>
+          )}
           {site.status === 'ready' && site.error && <p className="text-amber-700">{site.error}</p>}
           {site.status === 'ready' && guest && (
             <p className={s.muted}>
@@ -496,9 +576,22 @@ export function WebsiteStudio({ lang, themeMode = 'light', userId, isLoggingIn, 
               </button>
             </div>
           ) : site.status === 'error' ? (
-            <button type="button" onClick={() => create(site.brief)} disabled={busy} className={`${s.primaryButton} w-full`}>
-              {t('Intentar de nuevo', 'Try again')}
-            </button>
+            <div className="space-y-2">
+              {site.canRetry !== false && (
+                <button type="button" onClick={() => retry()} disabled={busy} className={`${s.primaryButton} w-full`}>
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {t('Intentar de nuevo', 'Try again')}
+                </button>
+              )}
+              {site.errorCode === 'larga' && site.level !== 'avanzada' && !site.sample && (
+                <button type="button" onClick={() => retry('avanzada')} disabled={busy} className={`${s.secondaryButton} w-full justify-center`}>
+                  {t('Reintentar en nivel Avanzada (3 créditos)', 'Retry as Advanced (3 credits)')}
+                </button>
+              )}
+              <button type="button" onClick={() => { setSite(null); loadList(); }} className={`${s.ghostButton} w-full justify-center`}>
+                {t('Cambiar el pedido', 'Change the request')}
+              </button>
+            </div>
           ) : (
             <>
               <label htmlFor="ws-edit" className="sr-only">{t('Cambio que quieres', 'Change you want')}</label>

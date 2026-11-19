@@ -23,12 +23,14 @@ import {
   Sparkles,
   DollarSign,
   Trophy,
+  LayoutTemplate,
 } from 'lucide-react';
 import { Language } from '../../types';
 import { ui } from '../../ui/tokens';
 import { RUBROS } from '../../constants/rubros';
 import { SalesView, ProposalsView } from './SalesViews';
 import { DocsView } from './DocsView';
+import { TemplatesView, AiStatusBanner } from './TemplatesView';
 
 // CRM interno de 4haus (solo el equipo). Empieza vacío y se llena con datos reales:
 // solicitudes de llamada, pedidos de código, códigos canjeados y negocios buscados.
@@ -77,7 +79,7 @@ const STAGES: Record<Kind, { id: string; es: string; en: string }[]> = {
 
 
 
-type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar' | 'ventas' | 'propuestas' | 'documentos';
+type Tab = 'panel' | 'leads' | 'pipeline' | 'buscar' | 'ventas' | 'propuestas' | 'documentos' | 'plantillas';
 
 interface Props {
   lang: Language;
@@ -139,6 +141,7 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
     { group: 'General', items: [{ id: 'panel', label: t('Panel', 'Dashboard'), icon: LayoutDashboard }, { id: 'leads', label: t('Leads (todos)', 'Leads (all)'), icon: Users }] },
     { group: t('Clientes', 'Clients'), items: [{ id: 'pipeline', label: 'Pipeline', icon: KanbanSquare }, { id: 'buscar', label: t('Buscar clientes', 'Find clients'), icon: Search }] },
     { group: t('Ventas', 'Sales'), items: [{ id: 'ventas', label: t('Ventas y comisiones', 'Sales & commissions'), icon: Wallet }, { id: 'propuestas', label: t('Propuestas', 'Proposals'), icon: FileSignature }] },
+    { group: 'Studio', items: [{ id: 'plantillas', label: t('Plantillas', 'Templates'), icon: LayoutTemplate }] },
     { group: 'Marketing', items: [{ label: t('Campañas', 'Campaigns'), icon: Megaphone }, { label: t('Agenda', 'Calendar'), icon: CalendarDays }] },
     { group: t('Equipo', 'Team'), items: [{ label: t('Colaboradores', 'Collaborators'), icon: Briefcase }, { id: 'documentos', label: t('Documentos', 'Documents'), icon: FileText }] },
   ];
@@ -245,6 +248,8 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
             </div>
           )}
 
+          <AiStatusBanner t={t} />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}
@@ -259,6 +264,8 @@ export function CrmApp({ lang, themeMode = 'light' }: Props) {
                 <Panel contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} onGo={setTab} />
               ) : tab === 'leads' ? (
                 <Leads contacts={contacts} isDark={isDark} t={t} stageLabel={stageLabel} onOpen={setEditing} q={globalQuery} setQ={setGlobalQuery} />
+              ) : tab === 'plantillas' ? (
+                <TemplatesView isDark={isDark} t={t} L={L} />
               ) : tab === 'documentos' ? (
                 <DocsView isDark={isDark} t={t} L={L} />
               ) : tab === 'ventas' ? (

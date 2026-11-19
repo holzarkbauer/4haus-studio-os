@@ -36,6 +36,26 @@ import {
 } from './InvestorInfographicModal';
 import { WhaleLogo } from './WhaleLogo';
 import { askDaniel } from './GuidedFlow';
+import { X, FileText, FileArchive, Loader2 } from 'lucide-react';
+import {
+  ImageAttachment,
+  TextAttachment,
+  LONG_PASTE_CHARS,
+  MAX_IMAGES,
+  compressImage,
+  describeSize,
+  isTextFile,
+  isZip,
+  newId,
+  readTextFile,
+  readZip,
+} from '../utils/attachments';
+
+/** Adjuntos que la casilla del inicio pasa al creador de webs. */
+export interface StartExtras {
+  attachments: { kind: TextAttachment['kind']; name: string; text: string }[];
+  images: { name: string; dataUrl: string }[];
+}
 
 type CreateCategoryId = 'web' | 'app' | 'agent' | 'image' | 'video' | 'voice';
 
@@ -67,7 +87,7 @@ interface GuidedPromptHeroProps {
   prefillPrompt?: string | null;
   onPrefillConsumed?: () => void;
   /** Con la categoría "Página web", el pedido abre el creador de webs. */
-  onStartWebsite?: (brief: string) => void;
+  onStartWebsite?: (brief: string, extras?: StartExtras) => void;
 }
 
 export function GuidedPromptHero({
@@ -90,6 +110,48 @@ export function GuidedPromptHero({
 
   const [selectedCategory, setSelectedCategory] = useState<CreateCategoryId>('web');
   const [promptInput, setPromptInput] = useState<string>('');
+  // Adjuntos reales (fotos, zip de referencia, textos largos), como en Claude.
+  const [homeTexts, setHomeTexts] = useState<TextAttachment[]>([]);
+  const [homeImages, setHomeImages] = useState<ImageAttachment[]>([]);
+  const [attachBusy, setAttachBusy] = useState(false);
+  const [attachProblem, setAttachProblem] = useState<string | null>(null);
+  const homeFileRef = useRef<HTMLInputElement>(null);
+
+  const addHomeFiles = async (files: FileList | File[]) => {
+    setAttachProblem(null);
+    setAttachBusy(true);
+    try {
+      let count = homeImages.length;
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          if (count >= MAX_IMAGES) {
+            setAttachProblem(lang === 'en' ? `Up to ${MAX_IMAGES} images.` : `Hasta ${MAX_IMAGES} imágenes.`);
+            continue;
+          }
+          const img = await compressImage(file, file.name);
+          count += 1;
+          setHomeImages((prev) => [...prev, img].slice(0, MAX_IMAGES));
+        } else if (isZip(file)) {
+          if (homeTexts.some((x) => x.kind === 'zip')) {
+            setAttachProblem(lang === 'en' ? 'Only 1 zip.' : 'Solo se puede adjuntar 1 zip.');
+            continue;
+          }
+          const z = await readZip(file);
+          setHomeTexts((prev) => [...prev, z]);
+        } else if (isTextFile(file)) {
+          const tx = await readTextFile(file);
+          setHomeTexts((prev) => [...prev, tx]);
+        } else {
+          setAttachProblem(lang === 'en' ? `Cannot read "${file.name}".` : `No puedo leer "${file.name}". Usa imágenes, un .zip o archivos de texto.`);
+        }
+      }
+    } catch (e) {
+      setAttachProblem((e as Error).message);
+    } finally {
+      setAttachBusy(false);
+      if (homeFileRef.current) homeFileRef.current.value = '';
+    }
+  };
   const [selectedModel, setSelectedModel] = useState<string>('Daniel 1.0');
   const [showModelMenu, setShowModelMenu] = useState<boolean>(false);
   const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
@@ -178,7 +240,7 @@ export function GuidedPromptHero({
       id: 'voice',
       label: lang === 'en' ? 'Voice' : 'Voz',
       icon: AudioLines,
-      soon: true,
+      soon: false,
       placeholder:
         lang === 'en'
           ? 'A warm voice-over for my website intro...'
@@ -190,7 +252,8 @@ export function GuidedPromptHero({
 
   const handleSendPrompt = async (overrideText?: string) => {
     const textToSend = (overrideText ?? promptInput).trim();
-    if (!textToSend || isThinking) return;
+    const hasAttachments = homeTexts.length > 0 || homeImages.length > 0;
+    if ((!textToSend && !(hasAttachments && selectedCategory === 'web')) || isThinking) return;
 
     const lowerDirect = textToSend.toLowerCase();
     if (
@@ -216,8 +279,24 @@ export function GuidedPromptHero({
 
     // La casilla del inicio envía a Daniel: responde en su panel con entregables (estilo Claude).
     if (!overrideText && selectedCategory === 'web' && onStartWebsite) {
-      onStartWebsite(textToSend);
+      onStartWebsite(textToSend, {
+        attachments: homeTexts.map(({ kind, name, text }) => ({ kind, name, text })),
+        images: homeImages.map(({ name, dataUrl }) => ({ name, dataUrl })),
+      });
       setPromptInput('');
+      setHomeTexts([]);
+      setHomeImages([]);
+      return;
+    }
+    // Voz: abre el estudio de voz con el texto ya escrito.
+    if (!overrideText && selectedCategory === 'voice') {
+      try {
+        sessionStorage.setItem('4haus_voice_text', textToSend.slice(0, 800));
+      } catch {
+        /* sin almacenamiento: se abre igual */
+      }
+      setPromptInput('');
+      onNavigateToModule('voz');
       return;
     }
     if (!overrideText) {
@@ -707,10 +786,47 @@ export function GuidedPromptHero({
               </div>
             )}
 
+            {(homeTexts.length > 0 || homeImages.length > 0) && (
+              <div className="flex flex-wrap gap-2 mb-2" aria-label={lang === 'en' ? 'Attachments' : 'Adjuntos'}>
+                {homeImages.map((img) => (
+                  <span key={img.id} className={`inline-flex items-center gap-2 max-w-[220px] rounded-xl border pl-1 pr-2 py-1 text-xs ${isDark ? 'border-white/15 bg-white/5 text-white' : 'border-black/10 bg-black/[0.03] text-zinc-900'}`}>
+                    <img src={img.dataUrl} alt="" className="w-7 h-7 rounded-md object-cover" />
+                    <span className="truncate">{img.name}</span>
+                    <button type="button" aria-label={lang === 'en' ? 'Remove' : 'Quitar'} onClick={() => setHomeImages((p) => p.filter((x) => x.id !== img.id))} className="cursor-pointer opacity-60 hover:opacity-100">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+                {homeTexts.map((tx) => (
+                  <span key={tx.id} title={tx.text.slice(0, 300)} className={`inline-flex items-center gap-2 max-w-[240px] rounded-xl border px-2.5 py-1.5 text-xs ${isDark ? 'border-white/15 bg-white/5 text-white' : 'border-black/10 bg-black/[0.03] text-zinc-900'}`}>
+                    {tx.kind === 'zip' ? <FileArchive className="w-3.5 h-3.5 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
+                    <span className="truncate">{tx.name}</span>
+                    <span className="shrink-0 opacity-60">{describeSize(tx.text, lang === 'en')}</span>
+                    <button type="button" aria-label={lang === 'en' ? 'Remove' : 'Quitar'} onClick={() => setHomeTexts((p) => p.filter((x) => x.id !== tx.id))} className="cursor-pointer opacity-60 hover:opacity-100">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <textarea
               ref={promptBoxRef}
               rows={3}
               value={promptInput}
+              onPaste={(e) => {
+                const files = Array.from(e.clipboardData.files || []) as File[];
+                if (files.length) {
+                  e.preventDefault();
+                  addHomeFiles(files);
+                  return;
+                }
+                const pasted = e.clipboardData.getData('text');
+                if (pasted.length > LONG_PASTE_CHARS) {
+                  e.preventDefault();
+                  setHomeTexts((prev) => [...prev, { id: newId(), kind: 'texto', name: lang === 'en' ? 'Pasted text' : 'Texto pegado', text: pasted.slice(0, 60000) }]);
+                }
+              }}
               onChange={(e) => setPromptInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -730,22 +846,30 @@ export function GuidedPromptHero({
               }`}
             />
 
+            {attachProblem && <p className="text-xs text-red-600 mt-1">{attachProblem}</p>}
+
             {/* Bottom Prompt Toolbar */}
             <div className="flex items-center justify-between pt-3 mt-1">
               <div className="flex items-center gap-2 relative">
+                <input
+                  ref={homeFileRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.zip,.txt,.md,.html,.htm,.css,.tsx,.ts,.jsx,.js,.json"
+                  className="hidden"
+                  onChange={(e) => e.target.files && addHomeFiles(e.target.files)}
+                />
                 <button
                   type="button"
-                  onClick={() =>
-                    setPromptInput((prev) =>
-                      prev ? prev : 'Contexto de mi negocio: Inmobiliaria / Servicios de alto ticket. '
-                    )
-                  }
+                  onClick={() => homeFileRef.current?.click()}
+                  disabled={attachBusy}
                   className={`p-2 rounded-full transition-colors cursor-pointer ${
                     isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/60'
                   }`}
-                  title="Añadir contexto del negocio"
+                  title={lang === 'en' ? 'Attach photos, a reference zip or text files' : 'Adjuntar fotos, un zip de referencia o archivos de texto'}
+                  aria-label={lang === 'en' ? 'Attach files' : 'Adjuntar archivos'}
                 >
-                  <Paperclip className="w-4 h-4" />
+                  {attachBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
                 </button>
 
                 <button
@@ -846,7 +970,7 @@ export function GuidedPromptHero({
                 <button
                   type="button"
                   onClick={() => handleSendPrompt()}
-                  disabled={!promptInput.trim() || isThinking}
+                  disabled={(!promptInput.trim() && !(selectedCategory === 'web' && (homeTexts.length > 0 || homeImages.length > 0))) || isThinking || attachBusy}
                   className={`w-10 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                     promptInput.trim()
                       ? 'bg-zinc-900 dark:bg-emerald-600 text-white shadow-xs hover:scale-105'
