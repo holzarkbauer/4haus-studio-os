@@ -7,21 +7,50 @@ export interface LanguageOption {
   flag: string;
 }
 
+// Solo se ofrecen los idiomas que la plataforma tiene traducidos de verdad. Antes la lista
+// mostraba 13 idiomas, pero las pantallas solo existen en español e inglés: elegir francés o
+// japonés no cambiaba nada. Cuando se traduzca otro idioma completo, se agrega aquí.
 export const AVAILABLE_LANGUAGES: LanguageOption[] = [
   { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
-  { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱' },
-  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
-  { code: 'qu', name: 'Quechua', nativeName: 'Runa Simi', flag: '🇵🇪' },
-  { code: 'ay', name: 'Aymara', nativeName: 'Aymar aru', flag: '🇧🇴' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷' },
 ];
+
+const LANG_KEY = '4haus_lang';
+
+/**
+ * Idioma inicial: 1) el que la persona eligió antes, 2) el de su navegador,
+ * 3) por zona horaria (Estados Unidos → inglés), 4) español.
+ */
+export function detectInitialLanguage(): Language {
+  const supported = AVAILABLE_LANGUAGES.map((l) => l.code as string);
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && supported.includes(saved)) return saved as Language;
+  } catch {
+    /* sin almacenamiento */
+  }
+  if (typeof navigator !== 'undefined') {
+    for (const tag of navigator.languages || [navigator.language]) {
+      const code = String(tag || '').toLowerCase().split('-')[0];
+      if (supported.includes(code)) return code as Language;
+    }
+  }
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (/^America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Detroit|Anchorage|Indiana)/.test(tz)) return 'en';
+  } catch {
+    /* sin zona horaria */
+  }
+  return 'es';
+}
+
+export function rememberLanguage(lang: Language) {
+  try {
+    localStorage.setItem(LANG_KEY, lang);
+  } catch {
+    /* sin almacenamiento */
+  }
+}
 
 /**
  * Localized system labels for UI across all 13 supported languages

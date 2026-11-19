@@ -99,3 +99,49 @@ button:not(:disabled):active {
 .doc-prose-dark th { background: rgba(255,255,255,0.06); }
 .doc-prose-dark th, .doc-prose-dark td { border-color: rgba(255,255,255,0.12); }
 .doc-prose-dark blockquote { background: rgba(245,158,11,0.12); color: #fde68a; }
+
+/* ------------------------------------------------------------------ páginas de venta
+   Home (4haus.us) y sales page (4haus.us/landing). Tipografía Sora (titulares) + Figtree (texto),
+   rojo de acción, ámbar para el bloque del fundador y contenedores blancos redondeados. */
+.sales {
+  --s-red: #e5383b;
+  --s-red-press: #c42b2e;
+  --s-amber: #ffc23d;
+  --s-paper: #f2f2f2;
+  --s-ink: #161616;
+  --s-muted: #5c5c62;
+  --s-line: #e4e4e7;
+  --s-green: #0e3b2c;
+  font-family: 'Figtree', system-ui, sans-serif;
+  color: var(--s-ink);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+.sales .s-display { font-family: 'Sora', system-ui, sans-serif; letter-spacing: -0.03em; }
+.sales .s-btn-red {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--s-red); color: #fff; font-weight: 700; border-radius: 999px;
+  padding: .9rem 1.6rem; transition: background-color .15s, transform .1s; cursor: pointer;
+}
+.sales .s-btn-red:hover { background: var(--s-red-press); }
+.sales .s-btn-red:active { transform: scale(.98); }
+.sales .s-btn-amber {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--s-amber); color: #161616; font-weight: 700; border-radius: 999px;
+  padding: .9rem 1.6rem; transition: filter .15s, transform .1s; cursor: pointer;
+}
+.sales .s-btn-amber:hover { filter: brightness(1.05); }
+.sales .s-btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border: 1.5px solid currentColor; border-radius: 999px; padding: .85rem 1.5rem; font-weight: 600; cursor: pointer;
+}
+.sales :focus-visible { outline: 3px solid var(--s-amber); outline-offset: 3px; }
+.sales .s-box { background: #fff; border-radius: 28px; }
+.sales .s-field {
+  width: 100%; border: 0; border-bottom: 1.5px solid var(--s-line); padding: .8rem .2rem; font-size: .95rem;
+  background: transparent; color: var(--s-ink);
+}
+.sales .s-field:focus { outline: none; border-color: var(--s-ink); }
+@media (prefers-reduced-motion: reduce) {
+  .sales * { animation: none !important; transition: none !important; }
+}

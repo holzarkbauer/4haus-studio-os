@@ -131,8 +131,21 @@ export function AppTopBar({
         </button>
       </nav>
 
-      {/* Derecha: solo el avatar, con todo lo demás dentro */}
-      <div className="relative flex items-center justify-end">
+      {/* Derecha: idioma + avatar */}
+      <div className="relative flex items-center justify-end gap-2">
+        <div role="group" aria-label={isEn ? 'Language' : 'Idioma'} className="flex items-center rounded-full border border-black/[0.08] dark:border-white/15 p-0.5 text-[11px] font-semibold">
+          {(['es', 'en'] as Language[]).map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => onSetLang(code)}
+              aria-pressed={lang === code}
+              className={`px-2 py-1 rounded-full cursor-pointer transition-colors ${lang === code ? 'bg-[#1D1D1F] text-white dark:bg-white dark:text-black' : 'text-[#6E6E73] hover:text-[#1D1D1F] dark:text-zinc-400 dark:hover:text-white'}`}
+            >
+              {code.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

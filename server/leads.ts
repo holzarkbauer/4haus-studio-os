@@ -9,7 +9,7 @@ const COLLECTION = 'serverLeads';
 const FILE = path.resolve(process.cwd(), 'data', 'leads.json');
 const PER_IP_DAILY = 5;
 
-export const PACKAGES = ['landing-3d', 'web-profesional', 'web-ventas', 'sistema-completo'] as const;
+export const PACKAGES = ['landing-3d', 'web-profesional', 'web-ventas', 'sistema-completo', 'plan-creador-7'] as const;
 export const UPGRADES = ['plantilla-premium', 'chatbot', 'agente-ia', 'backoffice', 'mantenimiento', 'dominio-hosting', 'idioma-extra'] as const;
 
 export interface Lead {

@@ -30,7 +30,9 @@ import { GrowthStepId } from './components/LeadNichoEngine';
 import { ProjectPreloadPayload } from './types/leadNichoTypes';
 
 import { Language, BackgroundTheme } from './types';
-import { AVAILABLE_LANGUAGES } from './i18n/languages';
+import { detectInitialLanguage, rememberLanguage } from './i18n/languages';
+import { SalesLanding } from './components/sales/SalesLanding';
+import { HomeSales } from './components/sales/HomeSales';
 import { SpotifyProvider } from './context/SpotifyContext';
 import { SpotifyMiniPlayer } from './components/SpotifyMiniPlayer';
 import {
@@ -40,19 +42,16 @@ import {
 } from './services/firebaseAuth';
 import type { User } from 'firebase/auth';
 
-function detectBrowserLanguage(): Language {
-  const supported = AVAILABLE_LANGUAGES.map((l) => l.code as string);
-  const preferred = typeof navigator !== 'undefined' ? navigator.languages || [navigator.language] : [];
-  for (const tag of preferred) {
-    const code = String(tag || '').toLowerCase().split('-')[0];
-    if (supported.includes(code)) return code as Language;
-  }
-  return 'es';
-}
-
 export default function App() {
-  // Idioma inicial según el navegador del visitante; si no está entre los disponibles, español.
-  const [lang, setLang] = useState<Language>(() => detectBrowserLanguage());
+  // Idioma: el que eligió antes, o el de su navegador / zona; se recuerda al cambiarlo.
+  const [lang, setLangState] = useState<Language>(() => detectInitialLanguage());
+  const setLang = (l: Language) => {
+    setLangState(l);
+    rememberLanguage(l);
+  };
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   
   // Theme state: defaults to 'beach-waves'
   const [theme, setTheme] = useState<BackgroundTheme>('beach-waves');
@@ -144,10 +143,12 @@ export default function App() {
   });
 
   // Routing state between 4haus.us (Landing) and 4haus.us/app (Studio OS Workbench)
-  const [currentRoute, setCurrentRoute] = useState<'landing' | 'app'>(() => {
+  const [currentRoute, setCurrentRoute] = useState<'landing' | 'app' | 'sales'>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
+      // 4haus.us/landing = sales page del Plan Creador (7 USD) con video de ventas.
+      if (path === '/landing' || path.startsWith('/landing/')) return 'sales';
       // 4haus.us/creadores abre directamente el Programa de creadores (enlace para Instagram).
       if (path.includes('/app') || path.startsWith('/creadores') || path.startsWith('/condiciones') || path.startsWith('/terminos-creadores') || path === '/admin' || path.startsWith('/admin/') || hash === '#app') {
         return 'app';
@@ -264,16 +265,14 @@ export default function App() {
       <div className="relative min-h-screen bg-transparent selection:bg-white selection:text-black overflow-x-hidden">
         
         {/* Render either 4haus.us (Landing) or 4haus.us/app (Studio OS Workbench) */}
-        {currentRoute === 'landing' ? (
-          <LandingPage
-            lang={lang}
+        {currentRoute === 'sales' ? (
+          <SalesLanding lang={lang === 'en' ? 'en' : 'es'} onSetLang={setLang} />
+        ) : currentRoute === 'landing' ? (
+          <HomeSales
+            lang={lang === 'en' ? 'en' : 'es'}
             onSetLang={setLang}
-            themeMode={topBarThemeMode}
-            onToggleThemeMode={() => setTopBarThemeMode(topBarThemeMode === 'light' ? 'dark' : 'light')}
             onOpenApp={navigateToApp}
-            onOpenPlans={() => setIsPlansModalOpen(true)}
             onOpenBooking={() => setIsBookingOpen(true)}
-            onOpenAboutModal={(tab) => setAboutModalState({ isOpen: true, tab: tab || null })}
           />
         ) : (
           <main className="relative z-10 min-h-screen">
